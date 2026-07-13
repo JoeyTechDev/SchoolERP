@@ -7,29 +7,23 @@ declare(strict_types=1);
 | SchoolERP Bootstrap
 |--------------------------------------------------------------------------
 |
-| Bootstraps the application by:
-|   • Loading Composer
-|   • Registering the global Error Handler
-|   • Loading Configuration
-|   • Loading Helper Files
-|   • Starting the Secure Session
+| Initializes the application.
 |
-| Author: JoeyTech
-| PHP Version: 8.2+
-|--------------------------------------------------------------------------
-*/
-
-/*
-|--------------------------------------------------------------------------
-| Project Root
-|--------------------------------------------------------------------------
+| Responsibilities:
+| - Load Composer autoloader
+| - Register global error handler
+| - Load configuration
+| - Validate configuration
+| - Load helper files
+| - Start secure session
+|
 */
 
 $rootPath = dirname(__DIR__);
 
 /*
 |--------------------------------------------------------------------------
-| Composer Autoload
+| Composer Autoloader
 |--------------------------------------------------------------------------
 */
 
@@ -37,7 +31,7 @@ $autoload = $rootPath . '/vendor/autoload.php';
 
 if (!is_file($autoload)) {
     throw new RuntimeException(
-        'Composer autoload file not found. Run "composer install".'
+        'Composer autoload not found. Run: composer install'
     );
 }
 
@@ -45,75 +39,83 @@ require_once $autoload;
 
 /*
 |--------------------------------------------------------------------------
-| Register Global Error Handler
-|--------------------------------------------------------------------------
-|
-| Register this as early as possible so that any exception thrown
-| during bootstrap is handled by our centralized ErrorHandler.
+| Error Handler
 |--------------------------------------------------------------------------
 */
 
-$errorHandler = $rootPath . '/app/Exceptions/ErrorHandler.php';
-
-if (!is_file($errorHandler)) {
-    throw new RuntimeException(
-        'ErrorHandler.php not found.'
-    );
-}
-
-require_once $errorHandler;
+use SchoolERP\Exceptions\ErrorHandler;
 
 ErrorHandler::registerGlobalHandlers();
 
 /*
 |--------------------------------------------------------------------------
-| Load Configuration
+| Application Configuration
 |--------------------------------------------------------------------------
 */
 
-$configFile = $rootPath . '/config/app.php';
+$config = $rootPath . '/config/app.php';
 
-if (!is_file($configFile)) {
+if (!is_file($config)) {
     throw new RuntimeException(
-        'Application configuration file not found.'
+        'config/app.php was not found.'
     );
 }
 
-require_once $configFile;
+require_once $config;
 
 /*
 |--------------------------------------------------------------------------
-| Validate Required Configuration
+| Validate Configuration
 |--------------------------------------------------------------------------
 */
 
-foreach (['APP_NAME', 'BASE_URL'] as $constant) {
+$requiredConstants = [
+    'APP_NAME',
+    'BASE_URL'
+];
+
+foreach ($requiredConstants as $constant) {
+
     if (!defined($constant)) {
+
         throw new RuntimeException(
-            "Required configuration constant '{$constant}' is missing."
+            sprintf(
+                'Required configuration constant "%s" is missing.',
+                $constant
+            )
         );
+
     }
+
 }
 
 /*
 |--------------------------------------------------------------------------
-| Load Helper Files
+| Helper Files
 |--------------------------------------------------------------------------
 */
 
 $helpers = [
-    $rootPath . '/app/Helpers/Session.php',
+    '/app/Helpers/Session.php'
 ];
 
 foreach ($helpers as $helper) {
 
-    if (!is_file($helper)) {
+    $file = $rootPath . $helper;
+
+    if (!is_file($file)) {
+
         throw new RuntimeException(
-            "Missing helper file: {$helper}"
+            sprintf(
+                'Required helper "%s" was not found.',
+                $helper
+            )
         );
+
     }
 
-    require_once $helper;
+    require_once $file;
+
 }
 
 /*
@@ -126,7 +128,7 @@ startSecureSession();
 
 /*
 |--------------------------------------------------------------------------
-| Application Ready
+| Bootstrap Complete
 |--------------------------------------------------------------------------
 */
 

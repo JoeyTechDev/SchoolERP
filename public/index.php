@@ -10,21 +10,15 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap/app.php';
 
-/*
-|--------------------------------------------------------------------------
-| Temporary Redirect
-|--------------------------------------------------------------------------
-*/
+$loginUrl = rtrim(BASE_URL, '/') . '/auth/login.php';
 
 if (!headers_sent()) {
 
-    header(
-        'Location: ' . rtrim(BASE_URL, '/') . '/auth/login.php'
-    );
+    header('Location: ' . $loginUrl);
 
     exit;
 }
 
 throw new RuntimeException(
-    'Headers already sent. Unable to redirect to login page.'
+    'Headers have already been sent. Unable to redirect to login page.'
 );

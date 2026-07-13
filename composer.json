@@ -7,7 +7,10 @@
     "autoload": {
         "psr-4": {
             "SchoolERP\\": "app/"
-        }
+        },
+        "files": [
+            "config/app.php"
+        ]
     },
 
     "authors": [
@@ -17,11 +20,6 @@
         }
     ],
 
-    "require": {},
-
-    "require-dev": {},
-
     "minimum-stability": "stable",
-
-    "prefer-stable": true
+    "require": {}
 }

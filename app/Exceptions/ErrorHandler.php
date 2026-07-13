@@ -20,6 +20,11 @@ declare(strict_types=1);
  * --------------------------------------------------------------------------
  */
 
+namespace SchoolERP\Exceptions;
+
+use RuntimeException;
+use Throwable;
+
 final class ErrorHandler
 {
     /**
