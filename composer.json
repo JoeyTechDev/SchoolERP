@@ -1,0 +1,27 @@
+{
+    "name": "joeytechnology/schoolerp",
+    "description": "Enterprise School Management System",
+    "type": "project",
+    "license": "MIT",
+
+    "autoload": {
+        "psr-4": {
+            "SchoolERP\\": "app/"
+        }
+    },
+
+    "authors": [
+        {
+            "name": "Joseph Adakole",
+            "email": "joeyadolson@gmail.com"
+        }
+    ],
+
+    "require": {},
+
+    "require-dev": {},
+
+    "minimum-stability": "stable",
+
+    "prefer-stable": true
+}

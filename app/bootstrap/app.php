@@ -2,50 +2,132 @@
 
 declare(strict_types=1);
 
-/**
- * --------------------------------------------------------------------------
- * SchoolERP Bootstrap
- * --------------------------------------------------------------------------
- *
- * Initializes the SchoolERP application.
- *
- * Responsibilities:
- * - Load application configuration
- * - Load the Error Handler
- * - Load the Session Helper
- * - Register global error handlers
- * - Start a secure session
- *
- * Future responsibilities:
- * - Composer Autoloader
- * - Environment Variables
- * - CSRF Protection
- * - Database Connection
- * - Dependency Container
- * --------------------------------------------------------------------------
- */
+/*
+|--------------------------------------------------------------------------
+| SchoolERP Bootstrap
+|--------------------------------------------------------------------------
+|
+| Bootstraps the application by:
+|   • Loading Composer
+|   • Registering the global Error Handler
+|   • Loading Configuration
+|   • Loading Helper Files
+|   • Starting the Secure Session
+|
+| Author: JoeyTech
+| PHP Version: 8.2+
+|--------------------------------------------------------------------------
+*/
 
-// --------------------------------------------------------------------------
-// Load application configuration.
-// --------------------------------------------------------------------------
-require_once __DIR__ . '/../config/app.php';
+/*
+|--------------------------------------------------------------------------
+| Project Root
+|--------------------------------------------------------------------------
+*/
 
-// --------------------------------------------------------------------------
-// Load Error Handler.
-// --------------------------------------------------------------------------
-require_once __DIR__ . '/../app/Exceptions/ErrorHandler.php';
+$rootPath = dirname(__DIR__);
 
-// --------------------------------------------------------------------------
-// Load Session Helper.
-// --------------------------------------------------------------------------
-require_once __DIR__ . '/../app/Helpers/Session.php';
+/*
+|--------------------------------------------------------------------------
+| Composer Autoload
+|--------------------------------------------------------------------------
+*/
 
-// --------------------------------------------------------------------------
-// Register global exception/error handlers.
-// --------------------------------------------------------------------------
+$autoload = $rootPath . '/vendor/autoload.php';
+
+if (!is_file($autoload)) {
+    throw new RuntimeException(
+        'Composer autoload file not found. Run "composer install".'
+    );
+}
+
+require_once $autoload;
+
+/*
+|--------------------------------------------------------------------------
+| Register Global Error Handler
+|--------------------------------------------------------------------------
+|
+| Register this as early as possible so that any exception thrown
+| during bootstrap is handled by our centralized ErrorHandler.
+|--------------------------------------------------------------------------
+*/
+
+$errorHandler = $rootPath . '/app/Exceptions/ErrorHandler.php';
+
+if (!is_file($errorHandler)) {
+    throw new RuntimeException(
+        'ErrorHandler.php not found.'
+    );
+}
+
+require_once $errorHandler;
+
 ErrorHandler::registerGlobalHandlers();
 
-// --------------------------------------------------------------------------
-// Start a secure session.
-// --------------------------------------------------------------------------
+/*
+|--------------------------------------------------------------------------
+| Load Configuration
+|--------------------------------------------------------------------------
+*/
+
+$configFile = $rootPath . '/config/app.php';
+
+if (!is_file($configFile)) {
+    throw new RuntimeException(
+        'Application configuration file not found.'
+    );
+}
+
+require_once $configFile;
+
+/*
+|--------------------------------------------------------------------------
+| Validate Required Configuration
+|--------------------------------------------------------------------------
+*/
+
+foreach (['APP_NAME', 'BASE_URL'] as $constant) {
+    if (!defined($constant)) {
+        throw new RuntimeException(
+            "Required configuration constant '{$constant}' is missing."
+        );
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Load Helper Files
+|--------------------------------------------------------------------------
+*/
+
+$helpers = [
+    $rootPath . '/app/Helpers/Session.php',
+];
+
+foreach ($helpers as $helper) {
+
+    if (!is_file($helper)) {
+        throw new RuntimeException(
+            "Missing helper file: {$helper}"
+        );
+    }
+
+    require_once $helper;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Start Secure Session
+|--------------------------------------------------------------------------
+*/
+
 startSecureSession();
+
+/*
+|--------------------------------------------------------------------------
+| Application Ready
+|--------------------------------------------------------------------------
+*/
+
+return true;

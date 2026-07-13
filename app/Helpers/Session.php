@@ -58,7 +58,7 @@ const ROLE_LIBRARIAN = 6;
 /**
  * Session timeout duration in seconds.
  */
-const SESSION_TIMEOUT = 1800; // 30 minutes
+const SESSION_TIMEOUT = 30 * 60; // 30 minutes
 
 /**
  * Log a user into the application.
@@ -153,6 +153,20 @@ function isLoggedIn(): bool
         destroySession();
         return false;
     }
+
+    if (
+    ($_SESSION['ip_address'] ?? '') !== ($_SERVER['REMOTE_ADDR'] ?? '')
+) {
+    destroySession();
+    return false;
+}
+
+if (
+    ($_SESSION['user_agent'] ?? '') !== ($_SERVER['HTTP_USER_AGENT'] ?? '')
+) {
+    destroySession();
+    return false;
+}
 
     refreshSession();
 

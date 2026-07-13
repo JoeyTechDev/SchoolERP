@@ -2,14 +2,29 @@
 
 declare(strict_types=1);
 
-/**
- * --------------------------------------------------------------------------
- * SchoolERP
- * --------------------------------------------------------------------------
- * Instead of loading config/app.php directly, it should load the bootstrap
- * */
+/*
+|--------------------------------------------------------------------------
+| SchoolERP Front Controller
+|--------------------------------------------------------------------------
+*/
 
-require_once __DIR__ . '/../bootstrap/app.php';
+require_once dirname(__DIR__) . '/bootstrap/app.php';
 
-header('Location: ' . BASE_URL . '/auth/login.php');
-exit;
+/*
+|--------------------------------------------------------------------------
+| Temporary Redirect
+|--------------------------------------------------------------------------
+*/
+
+if (!headers_sent()) {
+
+    header(
+        'Location: ' . rtrim(BASE_URL, '/') . '/auth/login.php'
+    );
+
+    exit;
+}
+
+throw new RuntimeException(
+    'Headers already sent. Unable to redirect to login page.'
+);
