@@ -6,10 +6,11 @@
 
     "autoload": {
         "psr-4": {
-            "SchoolERP\\": "app/"
+            "App\\": "app/"
         },
+
         "files": [
-            "config/app.php"
+            "app/Helpers/Session.php"
         ]
     },
 
@@ -20,6 +21,5 @@
         }
     ],
 
-    "minimum-stability": "stable",
     "require": {}
 }
