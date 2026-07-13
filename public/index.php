@@ -2,23 +2,20 @@
 
 declare(strict_types=1);
 
-/*
-|--------------------------------------------------------------------------
-| SchoolERP Front Controller
-|--------------------------------------------------------------------------
-*/
+/**
+ * ---------------------------------------------------------------
+ * SchoolERP Front Controller
+ * ---------------------------------------------------------------
+ */
 
-require_once dirname(__DIR__) . '/bootstrap/app.php';
-
-$loginUrl = rtrim(BASE_URL, '/') . '/auth/login.php';
+$container = require dirname(__DIR__) . '/bootstrap/app.php';
 
 if (!headers_sent()) {
-
-    header('Location: ' . $loginUrl);
-
-    exit;
+    header(
+        'Location: ' .
+        rtrim(BASE_URL, '/') .
+        '/auth/login.php'
+    );
 }
 
-throw new RuntimeException(
-    'Headers have already been sent. Unable to redirect to login page.'
-);
+exit;

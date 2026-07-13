@@ -2,22 +2,19 @@
 
 declare(strict_types=1);
 
-/*
-|--------------------------------------------------------------------------
-| SchoolERP Bootstrap
-|--------------------------------------------------------------------------
-|
-| Initializes the application.
-|
-| Responsibilities:
-| - Load Composer autoloader
-| - Register global error handler
-| - Load configuration
-| - Validate configuration
-| - Load helper files
-| - Start secure session
-|
-*/
+/**
+ * ---------------------------------------------------------------
+ * SchoolERP Bootstrap
+ * ---------------------------------------------------------------
+ *
+ * This file boots the entire application.
+ * Every request passes through here before
+ * reaching controllers or business logic.
+ */
+
+use SchoolERP\Container\Container;
+use SchoolERP\Container\ContainerInterface;
+use SchoolERP\Exceptions\ErrorHandler;
 
 $rootPath = dirname(__DIR__);
 
@@ -31,7 +28,7 @@ $autoload = $rootPath . '/vendor/autoload.php';
 
 if (!is_file($autoload)) {
     throw new RuntimeException(
-        'Composer autoload not found. Run: composer install'
+        'Composer autoload file not found. Run: composer install'
     );
 }
 
@@ -39,52 +36,40 @@ require_once $autoload;
 
 /*
 |--------------------------------------------------------------------------
-| Error Handler
+| Global Error Handler
 |--------------------------------------------------------------------------
 */
 
-\SchoolERP\Exceptions\ErrorHandler::registerGlobalHandlers();
+require_once $rootPath . '/app/Exceptions/ErrorHandler.php';
+
+ErrorHandler::registerGlobalHandlers();
 
 /*
 |--------------------------------------------------------------------------
-| Application Configuration
+| Configuration
 |--------------------------------------------------------------------------
 */
 
-$config = $rootPath . '/config/app.php';
+$configFile = $rootPath . '/config/app.php';
 
-if (!is_file($config)) {
-    throw new RuntimeException(
-        'config/app.php was not found.'
-    );
+if (!is_file($configFile)) {
+    throw new RuntimeException('config/app.php not found.');
 }
 
-require_once $config;
+require_once $configFile;
 
 /*
 |--------------------------------------------------------------------------
-| Validate Configuration
+| Validate Required Configuration
 |--------------------------------------------------------------------------
 */
 
-$requiredConstants = [
-    'APP_NAME',
-    'BASE_URL'
-];
-
-foreach ($requiredConstants as $constant) {
-
+foreach (['APP_NAME', 'BASE_URL'] as $constant) {
     if (!defined($constant)) {
-
         throw new RuntimeException(
-            sprintf(
-                'Required configuration constant "%s" is missing.',
-                $constant
-            )
+            "Missing required configuration constant: {$constant}"
         );
-
     }
-
 }
 
 /*
@@ -93,32 +78,19 @@ foreach ($requiredConstants as $constant) {
 |--------------------------------------------------------------------------
 */
 
-$helpers = [
-    '/app/Helpers/Session.php'
-];
+$sessionHelper = $rootPath . '/app/Helpers/Session.php';
 
-foreach ($helpers as $helper) {
-
-    $file = $rootPath . $helper;
-
-    if (!is_file($file)) {
-
-        throw new RuntimeException(
-            sprintf(
-                'Required helper "%s" was not found.',
-                $helper
-            )
-        );
-
-    }
-
-    require_once $file;
-
+if (!is_file($sessionHelper)) {
+    throw new RuntimeException(
+        'Session helper not found.'
+    );
 }
+
+require_once $sessionHelper;
 
 /*
 |--------------------------------------------------------------------------
-| Start Secure Session
+| Start Session
 |--------------------------------------------------------------------------
 */
 
@@ -126,8 +98,27 @@ startSecureSession();
 
 /*
 |--------------------------------------------------------------------------
-| Bootstrap Complete
+| Dependency Injection Container
 |--------------------------------------------------------------------------
 */
 
-return true;
+$container = new Container();
+
+/*
+|--------------------------------------------------------------------------
+| Register Container
+|--------------------------------------------------------------------------
+*/
+
+$container->instance(
+    ContainerInterface::class,
+    $container
+);
+
+/*
+|--------------------------------------------------------------------------
+| Return Application Container
+|--------------------------------------------------------------------------
+*/
+
+return $container;
