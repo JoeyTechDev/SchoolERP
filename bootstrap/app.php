@@ -43,9 +43,7 @@ require_once $autoload;
 |--------------------------------------------------------------------------
 */
 
-use SchoolERP\Exceptions\ErrorHandler;
-
-ErrorHandler::registerGlobalHandlers();
+\SchoolERP\Exceptions\ErrorHandler::registerGlobalHandlers();
 
 /*
 |--------------------------------------------------------------------------
