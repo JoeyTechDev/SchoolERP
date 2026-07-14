@@ -15,6 +15,7 @@ declare(strict_types=1);
 use SchoolERP\Container\Container;
 use SchoolERP\Container\ContainerInterface;
 use SchoolERP\Exceptions\ErrorHandler;
+use SchoolERP\Core\Config;
 
 use function SchoolERP\Helpers\startSecureSession;
 
@@ -105,6 +106,24 @@ startSecureSession();
 */
 
 $container = new Container();
+
+/*
+|--------------------------------------------------------------------------
+| Configuration Service
+|--------------------------------------------------------------------------
+*/
+
+$config = new Config();
+
+$config->load(
+    'app',
+    require $rootPath . '/config/app.php'
+);
+
+$container->instance(
+    Config::class,
+    $config
+);
 
 /*
 |--------------------------------------------------------------------------
