@@ -16,6 +16,8 @@ use SchoolERP\Container\Container;
 use SchoolERP\Container\ContainerInterface;
 use SchoolERP\Exceptions\ErrorHandler;
 
+use function SchoolERP\Helpers\startSecureSession;
+
 $rootPath = dirname(__DIR__);
 
 /*
