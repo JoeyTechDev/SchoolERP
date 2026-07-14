@@ -1,10 +1,9 @@
 <?php
 
 declare(strict_types=1);
-require_once __DIR__ . '/../../../config/app.php';
 
-$appName = APP_NAME;
-$baseUrl = BASE_URL;
+$appName = 'SchoolERP';
+$baseUrl = '';
 
 /**
  * --------------------------------------------------------------------------
@@ -30,13 +29,13 @@ if (
         $contentFile
     )
 ) {
-    throw new RuntimeException(
+    throw new \RuntimeException(
         'Error layout loaded without the required variables.'
     );
 }
 
 if (!is_file($contentFile)) {
-    throw new RuntimeException(
+    throw new \RuntimeException(
         sprintf(
             'Missing error content file: %s',
             $contentFile

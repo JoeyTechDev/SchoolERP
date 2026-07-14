@@ -2,95 +2,52 @@
 
 declare(strict_types=1);
 
-/**
- * --------------------------------------------------------------------------
- * SchoolERP Error Handler
- * --------------------------------------------------------------------------
- *
- * Centralized error handling and rendering system.
- *
- * Responsibilities:
- * - Render HTTP error pages
- * - Register global exception handlers
- * - Register PHP runtime error handlers
- * - Register fatal shutdown handlers
- * - Prevent sensitive error leakage
- *
- * PHP Version: 8.2+
- * --------------------------------------------------------------------------
- */
-
 namespace SchoolERP\Exceptions;
 
+use ErrorException;
 use RuntimeException;
 use Throwable;
 
+/**
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * ErrorHandler
+ * --------------------------------------------------------------------------
+ *
+ * Centralized framework error handling.
+ *
+ * Responsibilities
+ * ----------------
+ * • Register global PHP handlers
+ * • Handle uncaught exceptions
+ * • Convert PHP errors into exceptions
+ * • Handle fatal shutdown errors
+ * • Log framework errors
+ * • Render HTTP error pages
+ *
+ * Design Principles
+ * -----------------
+ * • Zero framework dependencies
+ * • Production safe
+ * • Strict typing
+ * • PSR-12 compliant
+ * • SOLID architecture
+ *
+ * This class intentionally DOES NOT depend on:
+ *
+ * • Container
+ * • Config
+ * • Router
+ * • Database
+ * • Session
+ * • Authentication
+ *
+ * so that it remains operational even when the framework fails
+ * during bootstrap.
+ */
 final class ErrorHandler
 {
-    /**
-     * Location of all error views.
-     */
-    private const VIEWS_PATH = __DIR__ . '/../Views/errors/';
-
-    /**
-     * Default HTTP status.
-     */
-    private const DEFAULT_STATUS = 500;
-
-    /**
-     * HTTP Error map.
-     *
-     * @var array<int,array{
-     *      view:string,
-     *      title:string,
-     *      message:string
-     * }>
-     */
-    private const ERROR_MAP = [
-
-        401 => [
-            'view' => '401',
-            'title' => '401 - Unauthorized',
-            'message' => 'You must be logged in to access this page.',
-        ],
-
-        403 => [
-            'view' => '403',
-            'title' => '403 - Access Denied',
-            'message' => 'You do not have permission to access this page.',
-        ],
-
-        404 => [
-            'view' => '404',
-            'title' => '404 - Page Not Found',
-            'message' => 'The page you are looking for could not be found.',
-        ],
-
-        419 => [
-            'view' => '419',
-            'title' => '419 - Session Expired',
-            'message' => 'Your session has expired. Please login again.',
-        ],
-
-        429 => [
-            'view' => '429',
-            'title' => '429 - Too Many Requests',
-            'message' => 'Too many requests. Please try again later.',
-        ],
-
-        500 => [
-            'view' => '500',
-            'title' => '500 - Internal Server Error',
-            'message' => 'Something went wrong. Please try again later.',
-        ],
-
-        503 => [
-            'view' => 'maintenance',
-            'title' => '503 - Maintenance',
-            'message' => 'The system is currently under maintenance.',
-        ],
-    ];
-
     /**
      * Prevent instantiation.
      */
@@ -99,40 +56,210 @@ final class ErrorHandler
     }
 
     /**
-     * Render an error page.
+     * Location of framework error views.
      */
-    public static function render(
-        int $statusCode,
-        ?string $customMessage = null
-    ): void {
+    private const VIEW_PATH = __DIR__ . '/../Views/errors/';
 
-        $requestedStatus = $statusCode;
+    /**
+     * Directory used for framework logs.
+     */
+    private const LOG_DIRECTORY = __DIR__ . '/../../storage/logs/';
 
-        if (!array_key_exists($statusCode, self::ERROR_MAP)) {
-            $statusCode = self::DEFAULT_STATUS;
-        }
+    /**
+     * Error log filename.
+     */
+    private const LOG_FILE = self::LOG_DIRECTORY . 'error.log';
 
-        $config = self::resolveConfig($statusCode);
+    /**
+     * Default HTTP status.
+     */
+    private const DEFAULT_STATUS = 500;
 
-        if (!headers_sent()) {
-            http_response_code($statusCode);
-        } else {
-            error_log(
-                sprintf(
-                    'Headers already sent while rendering HTTP %d.',
-                    $requestedStatus
-                )
-            );
-        }
+    /**
+     * HTTP error configuration.
+     *
+     * @var array<int,array{
+     *     view:string,
+     *     title:string,
+     *     message:string
+     * }>
+     */
+    private const ERROR_MAP = [
 
-        self::renderView(
-            view: $config['view'],
-            title: $config['title'],
-            message: $customMessage ?? $config['message'],
-            statusCode: $statusCode
+        401 => [
+            'view' => '401',
+            'title' => '401 Unauthorized',
+            'message' => 'Authentication required.',
+        ],
+
+        403 => [
+            'view' => '403',
+            'title' => '403 Forbidden',
+            'message' => 'Access denied.',
+        ],
+
+        404 => [
+            'view' => '404',
+            'title' => '404 Not Found',
+            'message' => 'The requested page could not be found.',
+        ],
+
+        419 => [
+            'view' => '419',
+            'title' => '419 Session Expired',
+            'message' => 'Your session has expired.',
+        ],
+
+        429 => [
+            'view' => '429',
+            'title' => '429 Too Many Requests',
+            'message' => 'Too many requests.',
+        ],
+
+        500 => [
+            'view' => '500',
+            'title' => '500 Internal Server Error',
+            'message' => 'An unexpected error occurred.',
+        ],
+
+        503 => [
+            'view' => 'maintenance',
+            'title' => '503 Service Unavailable',
+            'message' => 'The application is currently under maintenance.',
+        ],
+    ];
+
+    /**
+     * Register all global PHP handlers.
+     */
+    public static function registerGlobalHandlers(): void
+    {
+        set_exception_handler(
+            [self::class, 'handleException']
+        );
+
+        set_error_handler(
+            [self::class, 'handleError']
+        );
+
+        register_shutdown_function(
+            [self::class, 'handleShutdown']
         );
     }
 
+    /**
+     * Handle uncaught exceptions.
+     */
+    public static function handleException(
+        Throwable $exception
+    ): void {
+
+        self::logException($exception);
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        self::render(500);
+
+        exit;
+
+    }
+
+    /**
+     * Convert PHP runtime errors into exceptions.
+     */
+    public static function handleError(
+        int $severity,
+        string $message,
+        string $file,
+        int $line
+    ): bool {
+
+        /*
+         * Respect PHP's error_reporting() level.
+         */
+        if (!(error_reporting() & $severity)) {
+            return true;
+        }
+
+        throw new ErrorException(
+            $message,
+            0,
+            $severity,
+            $file,
+            $line
+        );
+    }
+
+    /**
+     * Handle fatal shutdown errors.
+     */
+    public static function handleShutdown(): void
+    {
+        $error = error_get_last();
+
+        if ($error === null) {
+            return;
+        }
+
+        $fatalTypes = [
+            E_ERROR,
+            E_PARSE,
+            E_CORE_ERROR,
+            E_COMPILE_ERROR,
+            E_USER_ERROR,
+        ];
+
+        if (!in_array($error['type'], $fatalTypes, true)) {
+            return;
+        }
+
+        self::logException(
+            new ErrorException(
+                $error['message'],
+                0,
+                $error['type'],
+                $error['file'],
+                $error['line']
+            )
+        );
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        self::render(500);
+
+        exit;
+
+    }
+
+    /**
+     * Render an HTTP error page.
+     */
+    public static function render(
+       int $statusCode,
+       ?string $customMessage = null
+    ): void {
+
+    if (!isset(self::ERROR_MAP[$statusCode])) {
+        $statusCode = self::DEFAULT_STATUS;
+    }
+
+    $config = self::ERROR_MAP[$statusCode];
+
+    if (!headers_sent()) {
+        http_response_code($statusCode);
+    }
+
+    self::renderView(
+        view: $config['view'],
+        title: $config['title'],
+        message: $customMessage ?? $config['message'],
+        statusCode: $statusCode
+    );
+}
     /**
      * Render an error page and terminate execution.
      *
@@ -152,7 +279,7 @@ final class ErrorHandler
     }
 
     /**
-     * 401 Unauthorized
+     * Abort with HTTP 401 Unauthorized.
      *
      * @return never
      */
@@ -162,7 +289,7 @@ final class ErrorHandler
     }
 
     /**
-     * 403 Forbidden
+     * Abort with HTTP 403 Forbidden.
      *
      * @return never
      */
@@ -172,7 +299,7 @@ final class ErrorHandler
     }
 
     /**
-     * 404 Not Found
+     * Abort with HTTP 404 Not Found.
      *
      * @return never
      */
@@ -182,7 +309,7 @@ final class ErrorHandler
     }
 
     /**
-     * 419 Session Expired
+     * Abort with HTTP 419 Session Expired.
      *
      * @return never
      */
@@ -192,7 +319,7 @@ final class ErrorHandler
     }
 
     /**
-     * 429 Too Many Requests
+     * Abort with HTTP 429 Too Many Requests.
      *
      * @return never
      */
@@ -202,7 +329,7 @@ final class ErrorHandler
     }
 
     /**
-     * 500 Internal Server Error
+     * Abort with HTTP 500 Internal Server Error.
      *
      * @return never
      */
@@ -212,7 +339,7 @@ final class ErrorHandler
     }
 
     /**
-     * 503 Maintenance Mode
+     * Abort with HTTP 503 Service Unavailable.
      *
      * @return never
      */
@@ -221,138 +348,7 @@ final class ErrorHandler
         self::abort(503);
     }
 
-    /**
-     * Register global handlers.
-     */
-    public static function registerGlobalHandlers(): void
-    {
-        set_exception_handler(
-            [self::class, 'handleUncaughtException']
-        );
-
-        set_error_handler(
-            [self::class, 'handleRuntimeError']
-        );
-
-        register_shutdown_function(
-            [self::class, 'handleFatalShutdown']
-        );
-    }
-
         /**
-     * Handle uncaught exceptions.
-     */
-    public static function handleUncaughtException(
-        Throwable $exception
-    ): void {
-
-        error_log(sprintf(
-            "[%s] Uncaught Exception: %s in %s on line %d",
-            date('Y-m-d H:i:s'),
-            $exception->getMessage(),
-            $exception->getFile(),
-            $exception->getLine()
-        ));
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        self::render(500);
-    }
-
-    /**
-     * Handle PHP runtime errors.
-     */
-    public static function handleRuntimeError(
-        int $severity,
-        string $message,
-        string $file,
-        int $line
-    ): bool {
-
-        if (!(error_reporting() & $severity)) {
-            return true;
-        }
-
-        error_log(sprintf(
-            "[%s] PHP Error [%d]: %s in %s on line %d",
-            date('Y-m-d H:i:s'),
-            $severity,
-            $message,
-            $file,
-            $line
-        ));
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        self::render(500);
-
-        return true;
-    }
-
-    /**
-     * Handle fatal shutdown errors.
-     */
-    public static function handleFatalShutdown(): void
-    {
-        $error = error_get_last();
-
-        if ($error === null) {
-            return;
-        }
-
-        $fatalErrors = [
-            E_ERROR,
-            E_PARSE,
-            E_CORE_ERROR,
-            E_COMPILE_ERROR,
-            E_USER_ERROR,
-        ];
-
-        if (!in_array($error['type'], $fatalErrors, true)) {
-            return;
-        }
-
-        error_log(sprintf(
-            "[%s] Fatal Error: %s in %s on line %d",
-            date('Y-m-d H:i:s'),
-            $error['message'],
-            $error['file'],
-            $error['line']
-        ));
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        if (!headers_sent()) {
-            http_response_code(500);
-        }
-
-        self::render(500);
-    }
-
-    /**
-     * Resolve an HTTP status configuration.
-     *
-     * @return array{
-     *      view:string,
-     *      title:string,
-     *      message:string
-     * }
-     */
-    private static function resolveConfig(
-        int $statusCode
-    ): array {
-
-        return self::ERROR_MAP[$statusCode]
-            ?? self::ERROR_MAP[self::DEFAULT_STATUS];
-    }
-
-    /**
      * Render an error view.
      */
     private static function renderView(
@@ -362,40 +358,24 @@ final class ErrorHandler
         int $statusCode
     ): void {
 
-        $contentFile = self::VIEWS_PATH . $view . '.php';
+        $layoutFile = self::VIEW_PATH . 'layout.php';
+        $contentFile = self::VIEW_PATH . $view . '.php';
 
         if (!is_file($contentFile)) {
+           $contentFile = self::VIEW_PATH . '500.php';
+    }
 
-            error_log(sprintf(
-                "[%s] Missing error view: %s",
-                date('Y-m-d H:i:s'),
-                $contentFile
-            ));
-
-            $contentFile = self::VIEWS_PATH . '500.php';
-        }
-
-        $layoutFile = self::VIEWS_PATH . 'layout.php';
+        if (!is_file($contentFile)) {
+           throw new RuntimeException(
+           'Missing error view: ' . $contentFile
+       );
+    }
 
         if (!is_file($layoutFile)) {
-
             throw new RuntimeException(
-                sprintf(
-                    'Missing error layout: %s',
-                    $layoutFile
-                )
+                'Missing error layout: ' . $layoutFile
             );
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Escape Output
-        |--------------------------------------------------------------------------
-        |
-        | Prevent XSS by escaping every dynamic variable before it reaches
-        | the view.
-        |
-        */
 
         $title = htmlspecialchars(
             $title,
@@ -409,8 +389,42 @@ final class ErrorHandler
             'UTF-8'
         );
 
-        $statusCode = (int) $statusCode;
-
         require $layoutFile;
     }
+
+    /**
+     * Log an exception.
+     */
+    private static function logException(
+        Throwable $exception
+    ): void {
+
+    if (
+        !is_dir(self::LOG_DIRECTORY)
+        && !mkdir(self::LOG_DIRECTORY, 0755, true)
+        &&  !is_dir(self::LOG_DIRECTORY)
+    ) {
+        return;
+    }
+
+        $log = sprintf(
+            "[%s] %s: %s in %s on line %d%sStack Trace:%s%s%s",
+            date('Y-m-d H:i:s'),
+            get_class($exception),
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine(),
+        PHP_EOL,
+        PHP_EOL,
+        $exception->getTraceAsString(),
+        PHP_EOL . PHP_EOL
+       );
+
+        file_put_contents(
+            self::LOG_FILE,
+            $log,
+            FILE_APPEND | LOCK_EX
+        );
+    }
 }
+    
