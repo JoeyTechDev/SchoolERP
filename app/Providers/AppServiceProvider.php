@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Providers;
 
 use SchoolERP\Config\Config;
+use SchoolERP\Database\Database;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +26,21 @@ final class AppServiceProvider extends ServiceProvider
                 'name' => 'SchoolERP Framework',
             ]
         );
+
+/*
+|--------------------------------------------------------------------------
+| Database Manager
+|--------------------------------------------------------------------------
+*/
+
+$this->container->singleton(
+    Database::class,
+    function () {
+        return new Database(
+            $this->container->get(Config::class)
+        );
+    }
+);
 
         /*
         |--------------------------------------------------------------------------
