@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 require 'vendor/autoload.php';
 
-use ReflectionClass;
 use SchoolERP\Container\Container;
 use SchoolERP\Database\Database;
 use SchoolERP\Providers\AppServiceProvider;
@@ -74,18 +73,12 @@ echo PHP_EOL;
 |--------------------------------------------------------------------------
 */
 
-$query->table('students');
-
-echo "Current Table:" . PHP_EOL;
-echo $query->getTable() . PHP_EOL . PHP_EOL;
-
-/*
-|--------------------------------------------------------------------------
-| Test get()
-|--------------------------------------------------------------------------
-*/
-
-echo "Executing get()..." . PHP_EOL;
+$query
+    ->table('students')
+    ->select([
+        'first_name',
+        'last_name'
+    ]);
 
 $result = $query->get();
 

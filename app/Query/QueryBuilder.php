@@ -67,7 +67,17 @@ final class QueryBuilder
     {
         return $this->table;
     }
+    /**
+     * Specify the columns to select.
+     *
+     * @param array<int,string> $columns
+     */
+    public function select(array $columns): self
+    {
+       $this->columns = $columns;
 
+        return $this;
+    }
     /**
      * Execute the query and return all results.
      *
