@@ -20,7 +20,10 @@
         }
     ],
 
-    "require": {
-        "php": "^8.2"
+    "require": {},
+
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
     }
 }

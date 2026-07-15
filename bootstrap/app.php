@@ -2,22 +2,19 @@
 
 declare(strict_types=1);
 
-/**
- * ---------------------------------------------------------------
- * SchoolERP Bootstrap
- * ---------------------------------------------------------------
- *
- * This file boots the entire application.
- * Every request passes through here before
- * reaching controllers or business logic.
- */
+/*
+|--------------------------------------------------------------------------
+| SchoolERP Bootstrap
+|--------------------------------------------------------------------------
+|
+| This file bootstraps the application and returns the Dependency
+| Injection Container.
+|
+*/
 
 use SchoolERP\Container\Container;
 use SchoolERP\Container\ContainerInterface;
-use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Core\Config;
-
-use function SchoolERP\Helpers\startSecureSession;
 
 $rootPath = dirname(__DIR__);
 
@@ -27,81 +24,21 @@ $rootPath = dirname(__DIR__);
 |--------------------------------------------------------------------------
 */
 
-$autoload = $rootPath . '/vendor/autoload.php';
-
-if (!is_file($autoload)) {
-    throw new RuntimeException(
-        'Composer autoload file not found. Run: composer install'
-    );
-}
-
-require_once $autoload;
+require_once $rootPath . '/vendor/autoload.php';
 
 /*
 |--------------------------------------------------------------------------
-| Global Error Handler
+| Register Global Error Handler
 |--------------------------------------------------------------------------
 */
 
-require_once $rootPath . '/app/Exceptions/ErrorHandler.php';
+use SchoolERP\Exceptions\ErrorHandler;
 
 ErrorHandler::registerGlobalHandlers();
 
 /*
 |--------------------------------------------------------------------------
-| Configuration
-|--------------------------------------------------------------------------
-*/
-
-$configFile = $rootPath . '/config/app.php';
-
-if (!is_file($configFile)) {
-    throw new RuntimeException('config/app.php not found.');
-}
-
-require_once $configFile;
-
-/*
-|--------------------------------------------------------------------------
-| Validate Required Configuration
-|--------------------------------------------------------------------------
-*/
-
-foreach (['APP_NAME', 'BASE_URL'] as $constant) {
-    if (!defined($constant)) {
-        throw new RuntimeException(
-            "Missing required configuration constant: {$constant}"
-        );
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| Helper Files
-|--------------------------------------------------------------------------
-*/
-
-$sessionHelper = $rootPath . '/app/Helpers/Session.php';
-
-if (!is_file($sessionHelper)) {
-    throw new RuntimeException(
-        'Session helper not found.'
-    );
-}
-
-require_once $sessionHelper;
-
-/*
-|--------------------------------------------------------------------------
-| Start Session
-|--------------------------------------------------------------------------
-*/
-
-startSecureSession();
-
-/*
-|--------------------------------------------------------------------------
-| Dependency Injection Container
+| Create Container
 |--------------------------------------------------------------------------
 */
 
@@ -109,7 +46,7 @@ $container = new Container();
 
 /*
 |--------------------------------------------------------------------------
-| Configuration Service
+| Load Configuration
 |--------------------------------------------------------------------------
 */
 
@@ -120,16 +57,16 @@ $config->load(
     require $rootPath . '/config/app.php'
 );
 
+/*
+|--------------------------------------------------------------------------
+| Register Core Services
+|--------------------------------------------------------------------------
+*/
+
 $container->instance(
     Config::class,
     $config
 );
-
-/*
-|--------------------------------------------------------------------------
-| Register Container
-|--------------------------------------------------------------------------
-*/
 
 $container->instance(
     ContainerInterface::class,
@@ -138,7 +75,7 @@ $container->instance(
 
 /*
 |--------------------------------------------------------------------------
-| Return Application Container
+| Return Container
 |--------------------------------------------------------------------------
 */
 
