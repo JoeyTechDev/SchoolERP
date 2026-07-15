@@ -8,6 +8,7 @@ use Closure;
 use ReflectionClass;
 use ReflectionException;
 use SchoolERP\Container\Exceptions\NotFoundException;
+use ReflectionNamedType;
 
 final class Container implements ContainerInterface
 {
@@ -164,16 +165,31 @@ final class Container implements ContainerInterface
         return new $class();
     }
 
-    /*
-     * Constructor injection comes in the next step.
-     */
+    $dependencies = [];
 
-    if ($constructor->getNumberOfParameters() === 0) {
-        return new $class();
+    foreach ($constructor->getParameters() as $parameter) {
+
+    $type = $parameter->getType();
+
+    if (!$type instanceof ReflectionNamedType) {
+        throw new NotFoundException(
+            "Unable to resolve parameter \${$parameter->getName()} in {$class}."
+        );
     }
 
-    throw new NotFoundException(
-        "Unable to automatically resolve {$class} because it has constructor dependencies."
+    if ($type->isBuiltin()) {
+        throw new NotFoundException(
+            "Cannot auto-resolve built-in parameter \${$parameter->getName()} in {$class}."
+        );
+    }
+
+    $dependencies[] = $this->make(
+        $type->getName()
+    );
+    }
+
+    return $reflection->newInstanceArgs(
+        $dependencies
     );
     }
 }

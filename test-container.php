@@ -186,3 +186,43 @@ $container = new Container();
 $service = $container->make(AutoResolvedService::class);
 
 echo $service->hello() . PHP_EOL;
+
+echo PHP_EOL;
+
+/*
+|--------------------------------------------------------------------------
+| Test 10: Constructor Dependency Injection
+|--------------------------------------------------------------------------
+*/
+
+echo "Test 10: Constructor Dependency Injection" . PHP_EOL;
+
+class Logger
+{
+    public function name(): string
+    {
+        return "Logger";
+    }
+}
+
+class UserRepository
+{
+    public function __construct(
+        public Logger $logger
+    ) {
+    }
+}
+
+class UserService
+{
+    public function __construct(
+        public UserRepository $repository
+    ) {
+    }
+}
+
+$container = new Container();
+
+$service = $container->make(UserService::class);
+
+echo $service->repository->logger->name() . PHP_EOL;
