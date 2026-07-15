@@ -33,6 +33,13 @@ final class Container implements ContainerInterface
      */
     private array $aliases = [];
 
+    /**
+     * Classes currently being resolved.
+     *
+     * @var array<int,string>
+     */
+    private array $resolving = [];
+
     public function bind(
         string $abstract,
         Closure|string|null $concrete = null
@@ -136,14 +143,37 @@ final class Container implements ContainerInterface
      * Automatically resolve a concrete class.
      */
     private function resolve(
-        string $class
+    string $class
     ): object {
 
-        try {
+    if (in_array($class, $this->resolving, true)) {
+
+        throw new NotFoundException(
+            'Circular dependency detected: '
+            . implode(
+                ' -> ',
+                [...$this->resolving, $class]
+            )
+        );
+    }
+
+    $this->resolving[] = $class;
+
+    try {
 
         $reflection = new ReflectionClass($class);
 
     } catch (ReflectionException) {
+
+        array_pop($this->resolving);
+
+        throw new NotFoundException(
+            "Class {$class} does not exist."
+        );
+
+    }
+
+     catch (ReflectionException) {
 
         throw new NotFoundException(
             "Class {$class} does not exist."
@@ -188,8 +218,12 @@ final class Container implements ContainerInterface
     );
     }
 
-    return $reflection->newInstanceArgs(
-        $dependencies
+    $instance = $reflection->newInstanceArgs(
+    $dependencies
     );
+
+    array_pop($this->resolving);
+
+    return $instance;
     }
 }

@@ -226,3 +226,40 @@ $container = new Container();
 $service = $container->make(UserService::class);
 
 echo $service->repository->logger->name() . PHP_EOL;
+
+echo PHP_EOL;
+
+/*
+|--------------------------------------------------------------------------
+| Test 11: Circular Dependency Detection
+|--------------------------------------------------------------------------
+*/
+
+echo "Test 11: Circular Dependency Detection" . PHP_EOL;
+
+class CircularA
+{
+    public function __construct(
+        public CircularB $b
+    ) {
+    }
+}
+
+class CircularB
+{
+    public function __construct(
+        public CircularA $a
+    ) {
+    }
+}
+
+try {
+    $container = new Container();
+
+    $container->make(CircularA::class);
+
+} catch (Throwable $e) {
+
+    echo get_class($e) . PHP_EOL;
+    echo $e->getMessage() . PHP_EOL;
+}
