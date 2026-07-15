@@ -162,3 +162,27 @@ $one = $container->make(TestService::class);
 $two = $container->make(TestService::class);
 
 var_dump($one === $two);
+
+echo "\n";
+
+/*
+|--------------------------------------------------------------------------
+| Test 9: Reflection Auto Resolution
+|--------------------------------------------------------------------------
+*/
+
+echo "Test 9: Reflection Auto Resolution\n";
+
+class AutoResolvedService
+{
+    public function hello(): string
+    {
+        return 'Auto Resolution Works!';
+    }
+}
+
+$container = new Container();
+
+$service = $container->make(AutoResolvedService::class);
+
+echo $service->hello() . PHP_EOL;

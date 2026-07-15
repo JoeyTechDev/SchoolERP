@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace SchoolERP\Container;
 
 use Closure;
+use ReflectionClass;
+use ReflectionException;
 use SchoolERP\Container\Exceptions\NotFoundException;
 
 final class Container implements ContainerInterface
@@ -83,19 +85,23 @@ final class Container implements ContainerInterface
         string $abstract
     ): mixed {
 
-        $abstract = $this->aliases[$abstract] ?? $abstract;
+    $abstract = $this->aliases[$abstract] ?? $abstract;
 
-        if (isset($this->instances[$abstract])) {
+    if (isset($this->instances[$abstract])) {
             return $this->instances[$abstract];
+    }
+
+    if (isset($this->bindings[$abstract])) {
+            return ($this->bindings[$abstract])($this);
         }
 
-        if (!isset($this->bindings[$abstract])) {
-            throw new NotFoundException(
-                "No binding registered for {$abstract}."
-            );
+    if (class_exists($abstract)) {
+            return $this->resolve($abstract);
         }
 
-        return ($this->bindings[$abstract])($this);
+        throw new NotFoundException(
+        "No binding registered for {$abstract}."
+    );
     }
 
     public function get(
@@ -123,5 +129,51 @@ final class Container implements ContainerInterface
         $this->bindings = [];
         $this->instances = [];
         $this->aliases = [];
+    }
+
+    /**
+     * Automatically resolve a concrete class.
+     */
+    private function resolve(
+        string $class
+    ): object {
+
+        try {
+
+        $reflection = new ReflectionClass($class);
+
+    } catch (ReflectionException) {
+
+        throw new NotFoundException(
+            "Class {$class} does not exist."
+        );
+
+    }
+
+    if (!$reflection->isInstantiable()) {
+
+        throw new NotFoundException(
+            "Class {$class} is not instantiable."
+        );
+
+    }
+
+    $constructor = $reflection->getConstructor();
+
+    if ($constructor === null) {
+        return new $class();
+    }
+
+    /*
+     * Constructor injection comes in the next step.
+     */
+
+    if ($constructor->getNumberOfParameters() === 0) {
+        return new $class();
+    }
+
+    throw new NotFoundException(
+        "Unable to automatically resolve {$class} because it has constructor dependencies."
+    );
     }
 }
