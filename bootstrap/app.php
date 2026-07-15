@@ -2,81 +2,48 @@
 
 declare(strict_types=1);
 
-/*
-|--------------------------------------------------------------------------
-| SchoolERP Bootstrap
-|--------------------------------------------------------------------------
-|
-| This file bootstraps the application and returns the Dependency
-| Injection Container.
-|
-*/
-
-use SchoolERP\Container\Container;
-use SchoolERP\Container\ContainerInterface;
-use SchoolERP\Core\Config;
-
-$rootPath = dirname(__DIR__);
-
-/*
-|--------------------------------------------------------------------------
-| Composer Autoloader
-|--------------------------------------------------------------------------
-*/
-
-require_once $rootPath . '/vendor/autoload.php';
-
-/*
-|--------------------------------------------------------------------------
-| Register Global Error Handler
-|--------------------------------------------------------------------------
-*/
-
 use SchoolERP\Exceptions\ErrorHandler;
+use SchoolERP\Http\Request;
+use SchoolERP\Routing\Router;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+/*
+|--------------------------------------------------------------------------
+| Register Framework Error Handling
+|--------------------------------------------------------------------------
+*/
 
 ErrorHandler::registerGlobalHandlers();
 
 /*
 |--------------------------------------------------------------------------
-| Create Container
+| Capture Current Request
 |--------------------------------------------------------------------------
 */
 
-$container = new Container();
+$request = Request::capture();
 
 /*
 |--------------------------------------------------------------------------
-| Load Configuration
+| Create Router
 |--------------------------------------------------------------------------
 */
 
-$config = new Config();
-
-$config->load(
-    'app',
-    require $rootPath . '/config/app.php'
-);
+$router = new Router();
 
 /*
 |--------------------------------------------------------------------------
-| Register Core Services
+| Load Application Routes
 |--------------------------------------------------------------------------
 */
 
-$container->instance(
-    Config::class,
-    $config
-);
-
-$container->instance(
-    ContainerInterface::class,
-    $container
-);
+require __DIR__ . '/../routes/web.php';
 
 /*
 |--------------------------------------------------------------------------
-| Return Container
+| Dispatch Request
 |--------------------------------------------------------------------------
 */
 
-return $container;
+$router->dispatch($request);

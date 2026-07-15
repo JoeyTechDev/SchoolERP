@@ -115,7 +115,31 @@ public function path(): string
         PHP_URL_PATH
     );
 
-    return $path === null || $path === ''
+    if ($path === null || $path === '') {
+        return '/';
+    }
+
+    /*
+     * Remove the application's base directory
+     * (e.g. /SchoolERP/public)
+     */
+    $basePath = str_replace(
+        '\\',
+        '/',
+        dirname($this->server['SCRIPT_NAME'] ?? '')
+    );
+
+    if (
+        $basePath !== '/'
+        && str_starts_with($path, $basePath)
+    ) {
+        $path = substr(
+            $path,
+            strlen($basePath)
+        );
+    }
+
+    return $path === ''
         ? '/'
         : $path;
 }

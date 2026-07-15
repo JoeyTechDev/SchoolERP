@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace SchoolERP\Routing;
 
+use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
-use SchoolERP\Exceptions\ErrorHandler;
 
 /**
  * --------------------------------------------------------------------------
@@ -47,7 +47,6 @@ final class Router
         string $uri,
         callable $action
     ): self {
-
         $this->routes['GET'][$uri] = $action;
 
         return $this;
@@ -60,7 +59,6 @@ final class Router
         string $uri,
         callable $action
     ): self {
-
         $this->routes['POST'][$uri] = $action;
 
         return $this;
@@ -72,25 +70,86 @@ final class Router
     public function dispatch(
         Request $request
     ): void {
-
         $method = $request->method();
 
         $path = $request->path();
 
-        $action = $this->routes[$method][$path] ?? null;
+        $route = $this->matchRoute(
+        $method,
+        $path
+    );
 
-        if ($action === null) {
-            ErrorHandler::notFound();
-        }
-
-        $response = $action($request);
-
-        if ($response instanceof Response) {
-            $response->send();
-            return;
-        }
-
-        Response::make((string) $response)
-            ->send();
+    if ($route === null) {
+        ErrorHandler::notFound();
     }
+
+    $this->executeRoute(
+    $route['action'],
+    $request,
+    $route['parameters']
+    );
+    }
+
+    /**
+     * Attempt to match a route.
+     *
+     * @return array{
+     *     action: callable,
+     *     parameters: array<int,string>
+     * }|null
+     */
+    private function matchRoute(
+        string $method,
+        string $path
+    ): ?array {
+
+    foreach ($this->routes[$method] ?? [] as $route => $action) {
+
+        $pattern = preg_replace(
+            '#\{[^/]+\}#',
+            '([^/]+)',
+            $route
+        );
+
+        $pattern = '#^' . $pattern . '$#';
+
+        if (!preg_match($pattern, $path, $matches)) {
+            continue;
+        }
+
+        array_shift($matches);
+
+        return [
+            'action' => $action,
+            'parameters' => $matches,
+        ];
+    }
+
+        return null;
+    }
+
+    /**
+     * Execute a matched route.
+     */
+    private function executeRoute(
+        callable $action,
+        Request $request,
+        array $parameters
+    ): void {
+
+    $response = $action(
+        $request,
+        ...$parameters
+    );
+
+    if ($response instanceof Response) {
+        $response->send();
+        return;
+    }
+
+    Response::make((string) $response)
+        ->send();
+    } 
+
+
 }
