@@ -186,5 +186,37 @@ public function lastInsertId(): string
     return $this->connection()
         ->lastInsertId();
 }
+/**
+ * Begin a database transaction.
+ */
+public function beginTransaction(): bool
+{
+    return $this->connection()
+        ->beginTransaction();
+}
+/**
+ * Commit the current transaction.
+ */
+public function commit(): bool
+{
+    return $this->connection()
+        ->commit();
+}
+/**
+ * Roll back the current transaction.
+ */
+public function rollBack(): bool
+{
+    return $this->connection()
+        ->rollBack();
+}
+/**
+ * Determine whether a transaction is active.
+ */
+public function inTransaction(): bool
+{
+    return $this->connection()
+        ->inTransaction();
+}
 
 }
