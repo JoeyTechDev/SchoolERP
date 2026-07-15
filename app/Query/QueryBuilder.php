@@ -45,28 +45,44 @@ final class QueryBuilder
     /**
      * Create a Query Builder.
      */
-    public function __construct(
-        Database $database
-    ) {
+    public function __construct(Database $database)
+    {
         $this->database = $database;
     }
-/**
- * Set the table being queried.
- */
-public function table(
-    string $table
-): self {
 
-    $this->table = $table;
+    /**
+     * Set the table being queried.
+     */
+    public function table(string $table): self
+    {
+        $this->table = $table;
 
-    return $this;
-}
-/**
- * Get the current table.
- */
-public function getTable(): string
-{
-    return $this->table;
-}
+        return $this;
+    }
 
+    /**
+     * Get the current table.
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+
+    /**
+     * Execute the query and return all results.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function get(): array
+    {
+        $columns = implode(', ', $this->columns);
+
+        $sql = sprintf(
+            'SELECT %s FROM %s',
+            $columns,
+            $this->table
+        );
+
+        return $this->database->select($sql);
+    }
 }
