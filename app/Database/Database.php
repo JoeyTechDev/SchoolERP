@@ -107,4 +107,37 @@ private function connect(): PDO
         );
     }
 }
+
+/**
+ * Prepare and execute a SQL statement.
+ */
+private function statement(
+    string $sql,
+    array $bindings = []
+): \PDOStatement {
+
+    $statement = $this->connection()
+        ->prepare($sql);
+
+    $statement->execute($bindings);
+
+    return $statement;
+}
+
+/**
+ * Execute a SELECT query.
+ *
+ * @return array<int,array<string,mixed>>
+ */
+public function select(
+    string $sql,
+    array $bindings = []
+): array {
+
+    return $this->statement(
+        $sql,
+        $bindings
+    )->fetchAll();
+}
+
 }
