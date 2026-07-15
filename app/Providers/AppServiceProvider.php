@@ -4,15 +4,8 @@ declare(strict_types=1);
 
 namespace SchoolERP\Providers;
 
-/**
- * --------------------------------------------------------------------------
- * SchoolERP Framework
- * --------------------------------------------------------------------------
- * AppServiceProvider
- * --------------------------------------------------------------------------
- *
- * Registers core framework services.
- */
+use SchoolERP\Config\Config;
+
 final class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -20,21 +13,38 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Example binding
+        /*
+        |--------------------------------------------------------------------------
+        | Framework Name
+        |--------------------------------------------------------------------------
+        */
 
-        $this->container->instance(
+        $this->container->singleton(
             'framework.name',
-            (object) [
-                'name' => 'SchoolERP Framework'
+            fn () => (object) [
+                'name' => 'SchoolERP Framework',
             ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Configuration Manager
+        |--------------------------------------------------------------------------
+        */
+
+        $this->container->singleton(
+            Config::class,
+            fn () => new Config(
+                dirname(__DIR__, 2) . '/config'
+            )
         );
     }
 
     /**
-     * Bootstrap application services.
+     * Boot application services.
      */
     public function boot(): void
     {
-        // Future boot logic goes here.
+        //
     }
 }
