@@ -34,6 +34,13 @@ final class Container implements ContainerInterface
     private array $aliases = [];
 
     /**
+     * Registered service providers.
+     *
+     * @var array<int,\SchoolERP\Providers\ServiceProvider>
+     */
+    private array $providers = [];
+
+    /**
      * Classes currently being resolved.
      *
      * @var array<int,string>
@@ -226,4 +233,37 @@ final class Container implements ContainerInterface
 
     return $instance;
     }
+
+/**
+ * Register a service provider.
+ */
+public function register(
+    \SchoolERP\Providers\ServiceProvider $provider
+): void {
+
+    $provider->register();
+
+    $this->providers[] = $provider;
+}
+
+/**
+ * Boot all registered providers.
+ */
+public function bootProviders(): void
+{
+    foreach ($this->providers as $provider) {
+        $provider->boot();
+    }
+}
+
+/**
+ * Get all registered providers.
+ *
+ * @return array<int,\SchoolERP\Providers\ServiceProvider>
+ */
+public function providers(): array
+{
+    return $this->providers;
+}
+
 }
