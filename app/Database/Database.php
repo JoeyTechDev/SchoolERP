@@ -139,5 +139,52 @@ public function select(
         $bindings
     )->fetchAll();
 }
+ /**
+ * Execute an INSERT statement.
+ */
+public function insert(
+    string $sql,
+    array $bindings = []
+): bool {
+
+    return $this->statement(
+        $sql,
+        $bindings
+    )->rowCount() > 0;
+}
+/**
+ * Execute an UPDATE statement.
+ */
+public function update(
+    string $sql,
+    array $bindings = []
+): int {
+
+    return $this->statement(
+        $sql,
+        $bindings
+    )->rowCount();
+}
+/**
+ * Execute a DELETE statement.
+ */
+public function delete(
+    string $sql,
+    array $bindings = []
+): int {
+
+    return $this->statement(
+        $sql,
+        $bindings
+    )->rowCount();
+}
+/**
+ * Get the last inserted ID.
+ */
+public function lastInsertId(): string
+{
+    return $this->connection()
+        ->lastInsertId();
+}
 
 }
