@@ -45,11 +45,32 @@ final class Container implements ContainerInterface
     }
 
     public function singleton(
-        string $abstract,
-        Closure|string|null $concrete = null
+    string $abstract,
+    Closure|string|null $concrete = null
     ): void {
-        $this->bind($abstract, $concrete);
+
+    if (!$concrete instanceof Closure) {
+
+        $target = $concrete ?? $abstract;
+
+        $concrete = fn (ContainerInterface $container) =>
+            new $target();
     }
+
+    $this->bindings[$abstract] = function (
+        ContainerInterface $container
+    ) use (
+        $abstract,
+        $concrete
+    ) {
+
+        if (!isset($this->instances[$abstract])) {
+            $this->instances[$abstract] = $concrete($container);
+        }
+
+        return $this->instances[$abstract];
+    };
+}
 
     public function instance(
         string $abstract,
