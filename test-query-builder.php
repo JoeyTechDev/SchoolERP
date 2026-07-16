@@ -79,7 +79,8 @@ $query
         'first_name',
         'last_name'
     ])
-    ->orderBy('first_name', 'DESC');
+    ->orderBy('id')
+    ->limit(2);
 
 $result = $query->get();
 
