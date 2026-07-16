@@ -79,7 +79,7 @@ $query
         'first_name',
         'last_name'
     ])
-    ->where('id', '=', 2);
+    ->orderBy('first_name', 'DESC');
 
 $result = $query->get();
 

@@ -14,14 +14,6 @@ use SchoolERP\Database\Database;
  * --------------------------------------------------------------------------
  *
  * Fluent SQL Query Builder.
- *
- * Responsibilities
- * ----------------
- * • Build SQL queries
- * • Execute queries
- * • Return results
- *
- * This class depends only on Database.
  */
 final class QueryBuilder
 {
@@ -57,6 +49,13 @@ final class QueryBuilder
     private array $bindings = [];
 
     /**
+     * ORDER BY clauses.
+     *
+     * @var array<int,string>
+     */
+    private array $orders = [];
+
+    /**
      * Create a Query Builder.
      */
     public function __construct(Database $database)
@@ -65,7 +64,7 @@ final class QueryBuilder
     }
 
     /**
-     * Set the table being queried.
+     * Set table.
      */
     public function table(string $table): self
     {
@@ -75,7 +74,7 @@ final class QueryBuilder
     }
 
     /**
-     * Specify the columns to select.
+     * Select columns.
      *
      * @param array<int,string> $columns
      */
@@ -87,7 +86,7 @@ final class QueryBuilder
     }
 
     /**
-     * Add a WHERE clause.
+     * Add WHERE clause.
      */
     public function where(
         string $column,
@@ -107,7 +106,30 @@ final class QueryBuilder
     }
 
     /**
-     * Get the current table.
+     * Add ORDER BY clause.
+     */
+    public function orderBy(
+        string $column,
+        string $direction = 'ASC'
+    ): self {
+
+        $direction = strtoupper($direction);
+
+        if (!in_array($direction, ['ASC', 'DESC'], true)) {
+            $direction = 'ASC';
+        }
+
+        $this->orders[] = sprintf(
+            '%s %s',
+            $column,
+            $direction
+        );
+
+        return $this;
+    }
+
+    /**
+     * Current table.
      */
     public function getTable(): string
     {
@@ -115,7 +137,7 @@ final class QueryBuilder
     }
 
     /**
-     * Execute the query and return all results.
+     * Execute query.
      *
      * @return array<int,array<string,mixed>>
      */
@@ -131,6 +153,10 @@ final class QueryBuilder
 
         if (!empty($this->wheres)) {
             $sql .= ' WHERE ' . implode(' AND ', $this->wheres);
+        }
+
+        if (!empty($this->orders)) {
+            $sql .= ' ORDER BY ' . implode(', ', $this->orders);
         }
 
         return $this->database->select(
