@@ -73,15 +73,9 @@ echo PHP_EOL;
 |--------------------------------------------------------------------------
 */
 
-$query
+$student = $query
     ->table('students')
-    ->select([
-        'first_name',
-        'last_name'
-    ])
-    ->orderBy('id')
-    ->limit(2);
+    ->where('id', '=', 2)
+    ->first();
 
-$result = $query->get();
-
-print_r($result);
+print_r($student);

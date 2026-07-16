@@ -82,14 +82,25 @@ final class QueryBuilder
         return $this;
     }
 
-    /**
-     * Limit returned rows.
-     */
     public function limit(int $limit): self
     {
         $this->limit = max(0, $limit);
 
         return $this;
+    }
+
+    /**
+     * Return the first matching record.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function first(): ?array
+    {
+        $this->limit(1);
+
+        $results = $this->get();
+
+        return $results[0] ?? null;
     }
 
     public function getTable(): string
