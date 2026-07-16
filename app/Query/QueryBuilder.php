@@ -6,31 +6,71 @@ namespace SchoolERP\Query;
 
 use SchoolERP\Database\Database;
 
+/**
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Query Builder
+ * --------------------------------------------------------------------------
+ *
+ * Fluent SQL Query Builder.
+ */
 final class QueryBuilder
 {
+    /**
+     * Database manager.
+     */
     private Database $database;
 
+    /**
+     * Current table.
+     */
     private string $table = '';
 
-    /** @var array<int,string> */
+    /**
+     * Selected columns.
+     *
+     * @var array<int,string>
+     */
     private array $columns = ['*'];
 
-    /** @var array<int,string> */
+    /**
+     * WHERE clauses.
+     *
+     * @var array<int,string>
+     */
     private array $wheres = [];
 
-    /** @var array<int,mixed> */
+    /**
+     * Query bindings.
+     *
+     * @var array<int,mixed>
+     */
     private array $bindings = [];
 
-    /** @var array<int,string> */
+    /**
+     * ORDER BY clauses.
+     *
+     * @var array<int,string>
+     */
     private array $orders = [];
 
+    /**
+     * Query limit.
+     */
     private ?int $limit = null;
 
+    /**
+     * Create a Query Builder.
+     */
     public function __construct(Database $database)
     {
         $this->database = $database;
     }
 
+    /**
+     * Set table.
+     */
     public function table(string $table): self
     {
         $this->table = $table;
@@ -38,6 +78,11 @@ final class QueryBuilder
         return $this;
     }
 
+    /**
+     * Select columns.
+     *
+     * @param array<int,string> $columns
+     */
     public function select(array $columns): self
     {
         $this->columns = $columns;
@@ -45,6 +90,9 @@ final class QueryBuilder
         return $this;
     }
 
+    /**
+     * Add WHERE clause.
+     */
     public function where(
         string $column,
         string $operator,
@@ -62,6 +110,9 @@ final class QueryBuilder
         return $this;
     }
 
+    /**
+     * Add ORDER BY clause.
+     */
     public function orderBy(
         string $column,
         string $direction = 'ASC'
@@ -82,6 +133,9 @@ final class QueryBuilder
         return $this;
     }
 
+    /**
+     * Limit results.
+     */
     public function limit(int $limit): self
     {
         $this->limit = max(0, $limit);
@@ -103,12 +157,17 @@ final class QueryBuilder
         return $results[0] ?? null;
     }
 
+    /**
+     * Get current table.
+     */
     public function getTable(): string
     {
         return $this->table;
     }
 
     /**
+     * Execute query.
+     *
      * @return array<int,array<string,mixed>>
      */
     public function get(): array
@@ -133,9 +192,31 @@ final class QueryBuilder
             $sql .= ' LIMIT ' . $this->limit;
         }
 
-        return $this->database->select(
+        $results = $this->database->select(
             $sql,
             $this->bindings
         );
+
+        $this->reset();
+
+        return $results;
+    }
+
+    /**
+     * Reset builder state after query execution.
+     */
+    private function reset(): void
+    {
+        $this->table = '';
+
+        $this->columns = ['*'];
+
+        $this->wheres = [];
+
+        $this->bindings = [];
+
+        $this->orders = [];
+
+        $this->limit = null;
     }
 }
