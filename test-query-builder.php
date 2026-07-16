@@ -78,7 +78,8 @@ $query
     ->select([
         'first_name',
         'last_name'
-    ]);
+    ])
+    ->where('id', '=', 2);
 
 $result = $query->get();
 

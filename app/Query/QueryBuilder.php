@@ -43,6 +43,20 @@ final class QueryBuilder
     private array $columns = ['*'];
 
     /**
+     * WHERE clauses.
+     *
+     * @var array<int,string>
+     */
+    private array $wheres = [];
+
+    /**
+     * Query bindings.
+     *
+     * @var array<int,mixed>
+     */
+    private array $bindings = [];
+
+    /**
      * Create a Query Builder.
      */
     public function __construct(Database $database)
@@ -61,23 +75,45 @@ final class QueryBuilder
     }
 
     /**
-     * Get the current table.
-     */
-    public function getTable(): string
-    {
-        return $this->table;
-    }
-    /**
      * Specify the columns to select.
      *
      * @param array<int,string> $columns
      */
     public function select(array $columns): self
     {
-       $this->columns = $columns;
+        $this->columns = $columns;
 
         return $this;
     }
+
+    /**
+     * Add a WHERE clause.
+     */
+    public function where(
+        string $column,
+        string $operator,
+        mixed $value
+    ): self {
+
+        $this->wheres[] = sprintf(
+            '%s %s ?',
+            $column,
+            $operator
+        );
+
+        $this->bindings[] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Get the current table.
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+
     /**
      * Execute the query and return all results.
      *
@@ -93,6 +129,13 @@ final class QueryBuilder
             $this->table
         );
 
-        return $this->database->select($sql);
+        if (!empty($this->wheres)) {
+            $sql .= ' WHERE ' . implode(' AND ', $this->wheres);
+        }
+
+        return $this->database->select(
+            $sql,
+            $this->bindings
+        );
     }
 }
