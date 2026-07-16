@@ -3,79 +3,61 @@
 declare(strict_types=1);
 
 require 'vendor/autoload.php';
+require 'bootstrap/app.php';
 
-use SchoolERP\Container\Container;
+use SchoolERP\Config\Config;
 use SchoolERP\Database\Database;
-use SchoolERP\Providers\AppServiceProvider;
 use SchoolERP\Query\QueryBuilder;
 
-echo "=====================================" . PHP_EOL;
-echo "Query Builder Debug Test" . PHP_EOL;
-echo "=====================================" . PHP_EOL;
-echo PHP_EOL;
+echo "=====================================\n";
+echo "Query Builder INSERT Test\n";
+echo "=====================================\n\n";
 
-/*
-|--------------------------------------------------------------------------
-| Boot the Container
-|--------------------------------------------------------------------------
-*/
+$config = new Config(
+    __DIR__ . '/config'
+);
 
-$container = new Container();
-
-$provider = new AppServiceProvider($container);
-
-$provider->register();
-
-/*
-|--------------------------------------------------------------------------
-| Resolve Database
-|--------------------------------------------------------------------------
-*/
-
-$database = $container->get(Database::class);
-
-/*
-|--------------------------------------------------------------------------
-| Create Query Builder
-|--------------------------------------------------------------------------
-*/
+$database = new Database($config);
 
 $query = new QueryBuilder($database);
 
 /*
 |--------------------------------------------------------------------------
-| Display Loaded Class
+| Insert
 |--------------------------------------------------------------------------
 */
 
-echo "Loaded Class:" . PHP_EOL;
-echo get_class($query) . PHP_EOL . PHP_EOL;
-
-/*
-|--------------------------------------------------------------------------
-| Display Available Methods
-|--------------------------------------------------------------------------
-*/
-
-echo "Available Methods:" . PHP_EOL;
-
-$reflection = new ReflectionClass($query);
-
-foreach ($reflection->getMethods() as $method) {
-    echo "- " . $method->getName() . PHP_EOL;
-}
-
-echo PHP_EOL;
-
-/*
-|--------------------------------------------------------------------------
-| Test table()
-|--------------------------------------------------------------------------
-*/
-
-$student = $query
+$id = $query
     ->table('students')
-    ->where('id', '=', 2)
+    ->insert([
+        'first_name' => 'Framework',
+        'last_name'  => 'Test',
+    ]);
+
+echo "Inserted ID: {$id}\n\n";
+
+/*
+|--------------------------------------------------------------------------
+| Verify
+|--------------------------------------------------------------------------
+*/
+
+$result = $query
+    ->table('students')
+    ->where('id', '=', $id)
     ->first();
 
-print_r($student);
+print_r($result);
+
+/*
+|--------------------------------------------------------------------------
+| Cleanup
+|--------------------------------------------------------------------------
+*/
+
+$database->delete(
+    'DELETE FROM students WHERE id = ?',
+    [$id]
+);
+
+echo "\nTemporary record deleted.\n";

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace SchoolERP\Query;
 
+use SchoolERP\Query\Concerns\BuildsSelectQueries;
+use SchoolERP\Query\Concerns\BuildsInsertQueries;
+use SchoolERP\Query\Concerns\BuildsUpdateQueries;
+use SchoolERP\Query\Concerns\BuildsDeleteQueries;
+use SchoolERP\Query\Concerns\ResetsBuilder;
 use SchoolERP\Database\Database;
 
 /**
@@ -16,7 +21,12 @@ use SchoolERP\Database\Database;
  * Fluent SQL Query Builder.
  */
 final class QueryBuilder
-{
+{    
+    use BuildsSelectQueries;
+    use BuildsInsertQueries;
+    use BuildsUpdateQueries;
+    use BuildsDeleteQueries;
+    use ResetsBuilder;
     /**
      * Database manager.
      */
@@ -166,6 +176,45 @@ final class QueryBuilder
     }
 
     /**
+ * Insert a new record.
+ *
+ * @param array<string,mixed> $data
+ */
+public function insert(array $data): int
+{
+    if ($data === []) {
+        throw new \InvalidArgumentException(
+            'Insert data cannot be empty.'
+        );
+    }
+
+    $columns = array_keys($data);
+
+    $placeholders = implode(
+        ', ',
+        array_fill(0, count($columns), '?')
+    );
+
+    $sql = sprintf(
+        'INSERT INTO %s (%s) VALUES (%s)',
+        $this->table,
+        implode(', ', $columns),
+        $placeholders
+    );
+
+    $this->database->insert(
+        $sql,
+        array_values($data)
+    );
+
+    $id = (int) $this->database->lastInsertId();
+
+    $this->reset();
+
+    return $id;
+    }
+
+    /**
      * Execute query.
      *
      * @return array<int,array<string,mixed>>
@@ -200,7 +249,7 @@ final class QueryBuilder
         $this->reset();
 
         return $results;
-    }
+}
 
     /**
      * Reset builder state after query execution.
