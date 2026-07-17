@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\Query;
 
+use SchoolERP\Query\State\QueryState;
 use SchoolERP\Query\Concerns\BuildsSelectQueries;
 use SchoolERP\Query\Concerns\BuildsInsertQueries;
 use SchoolERP\Query\Concerns\BuildsUpdateQueries;
@@ -76,6 +77,8 @@ final class QueryBuilder
     public function __construct(Database $database)
     {
         $this->database = $database;
+        
+        $this->state = new QueryState();
     }
 
     /**
@@ -83,7 +86,7 @@ final class QueryBuilder
      */
     public function table(string $table): self
     {
-        $this->table = $table;
+        $this->state->table = $table;
 
         return $this;
     }
@@ -99,27 +102,190 @@ final class QueryBuilder
 
         return $this;
     }
+    
+/**
+ * Add a WHERE clause.
+ */
+private function addWhere(
+    string $boolean,
+    string $column,
+    string $operator,
+    mixed $value
+): self {
 
-    /**
-     * Add WHERE clause.
-     */
-    public function where(
-        string $column,
-        string $operator,
-        mixed $value
-    ): self {
-
-        $this->wheres[] = sprintf(
-            '%s %s ?',
-            $column,
-            $operator
-        );
-
-        $this->bindings[] = $value;
-
-        return $this;
+    if (!empty($this->wheres)) {
+        $this->wheres[] = $boolean;
     }
 
+    $this->wheres[] = sprintf(
+        '%s %s ?',
+        $column,
+        $operator
+    );
+
+    $this->bindings[] = $value;
+
+    return $this;
+}
+
+/**
+ * Add a WHERE clause.
+ */
+public function where(
+    string $column,
+    string $operator,
+    mixed $value
+): self {
+
+    return $this->addWhere(
+        'AND',
+        $column,
+        $operator,
+        $value
+    );
+}
+
+/**
+ * Add an OR WHERE clause.
+ */
+public function orWhere(
+    string $column,
+    string $operator,
+    mixed $value
+): self {
+
+    return $this->addWhere(
+        'OR',
+        $column,
+        $operator,
+        $value
+    );
+}
+
+/**
+ * Add a WHERE IN clause.
+ *
+ * @param array<int,mixed> $values
+ */
+public function whereIn(
+    string $column,
+    array $values
+): self {
+
+    if ($values === []) {
+        throw new \InvalidArgumentException(
+            'whereIn values cannot be empty.'
+        );
+    }
+
+    $placeholders = implode(
+        ', ',
+        array_fill(0, count($values), '?')
+    );
+
+    if (!empty($this->wheres)) {
+        $this->wheres[] = 'AND';
+    }
+
+    $this->wheres[] = sprintf(
+        '%s IN (%s)',
+        $column,
+        $placeholders
+    );
+
+    foreach ($values as $value) {
+        $this->bindings[] = $value;
+    }
+
+    return $this;
+}
+
+/**
+ * Add a WHERE BETWEEN clause.
+ *
+ * @param array{0:mixed,1:mixed} $values
+ */
+public function whereBetween(
+    string $column,
+    array $values
+): self {
+
+    if (count($values) !== 2) {
+        throw new \InvalidArgumentException(
+            'whereBetween requires exactly two values.'
+        );
+    }
+
+    if (!empty($this->wheres)) {
+        $this->wheres[] = 'AND';
+    }
+
+    $this->wheres[] = sprintf(
+        '%s BETWEEN ? AND ?',
+        $column
+    );
+
+    $this->bindings[] = $values[0];
+    $this->bindings[] = $values[1];
+
+    return $this;
+}
+
+/**
+ * Add a WHERE LIKE clause.
+ */
+public function whereLike(
+    string $column,
+    string $pattern
+): self {
+
+    if (!empty($this->wheres)) {
+        $this->wheres[] = 'AND';
+    }
+
+    $this->wheres[] = sprintf(
+        '%s LIKE ?',
+        $column
+    );
+
+    $this->bindings[] = $pattern;
+
+    return $this;
+}  
+
+/**
+ * Add a WHERE NULL clause.
+ */
+public function whereNull(string $column): self
+{
+    if (!empty($this->wheres)) {
+        $this->wheres[] = 'AND';
+    }
+
+    $this->wheres[] = sprintf(
+        '%s IS NULL',
+        $column
+    );
+
+    return $this;
+}
+
+ /**
+ * Add a WHERE NOT NULL clause.
+ */
+public function whereNotNull(string $column): self
+{
+    if (!empty($this->wheres)) {
+        $this->wheres[] = 'AND';
+    }
+
+    $this->wheres[] = sprintf(
+        '%s IS NOT NULL',
+        $column
+    );
+
+    return $this;
+}
     /**
      * Add ORDER BY clause.
      */
@@ -172,10 +338,10 @@ final class QueryBuilder
      */
     public function getTable(): string
     {
-        return $this->table;
+    return $this->state->table;
     }
 
-    /**
+/**
  * Insert a new record.
  *
  * @param array<string,mixed> $data
@@ -196,11 +362,11 @@ public function insert(array $data): int
     );
 
     $sql = sprintf(
-        'INSERT INTO %s (%s) VALUES (%s)',
-        $this->table,
-        implode(', ', $columns),
-        $placeholders
-    );
+    'INSERT INTO %s (%s) VALUES (%s)',
+    $this->state->table,
+    implode(', ', $columns),
+    $placeholders
+   );
 
     $this->database->insert(
         $sql,
@@ -214,6 +380,78 @@ public function insert(array $data): int
     return $id;
     }
 
+/**
+ * Update existing records.
+ *
+ * @param array<string,mixed> $data
+ */
+public function update(array $data): int
+{
+    if ($data === []) {
+        throw new \InvalidArgumentException(
+            'Update data cannot be empty.'
+        );
+    }
+
+    $set = [];
+
+    foreach ($data as $column => $value) {
+        $set[] = "{$column} = ?";
+    }
+
+    $sql = sprintf(
+        'UPDATE %s SET %s',
+        $this->state->table,
+        implode(', ', $set)
+    );
+
+    if (!empty($this->wheres)) {
+        $sql .= ' WHERE ' . implode(' ', $this->wheres);
+    }
+
+    $bindings = array_merge(
+        array_values($data),
+        $this->bindings
+    );
+
+    $affected = $this->database->update(
+        $sql,
+        $bindings
+    );
+
+    $this->reset();
+
+    return $affected;
+    }
+    
+/**
+ * Delete records.
+ */
+public function delete(): int
+{
+    if (empty($this->wheres)) {
+        throw new \RuntimeException(
+            'Refusing to delete records without a WHERE clause.'
+        );
+    }
+
+    $sql = sprintf(
+        'DELETE FROM %s',
+        $this->state->table
+    );
+
+    $sql .= ' WHERE ' . implode(' ', $this->wheres
+    );
+
+    $affected = $this->database->delete(
+        $sql,
+        $this->bindings
+    );
+
+    $this->reset();
+
+    return $affected;
+}
     /**
      * Execute query.
      *
@@ -226,11 +464,11 @@ public function insert(array $data): int
         $sql = sprintf(
             'SELECT %s FROM %s',
             $columns,
-            $this->table
+            $this->state->table,
         );
 
         if (!empty($this->wheres)) {
-            $sql .= ' WHERE ' . implode(' AND ', $this->wheres);
+            $sql .= ' WHERE ' . implode(' ', $this->wheres);
         }
 
         if (!empty($this->orders)) {
@@ -256,7 +494,7 @@ public function insert(array $data): int
      */
     private function reset(): void
     {
-        $this->table = '';
+        $this->state->table = '';
 
         $this->columns = ['*'];
 
@@ -268,4 +506,8 @@ public function insert(array $data): int
 
         $this->limit = null;
     }
+/**
+ * Current query state.
+ */
+private QueryState $state;
 }
