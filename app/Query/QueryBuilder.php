@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\Query;
 
+use SchoolERP\Query\Concerns\BuildsWhereClauses;
 use SchoolERP\Query\State\QueryState;
 use SchoolERP\Query\Concerns\BuildsSelectQueries;
 use SchoolERP\Query\Concerns\BuildsInsertQueries;
@@ -22,7 +23,8 @@ use SchoolERP\Database\Database;
  * Fluent SQL Query Builder.
  */
 final class QueryBuilder
-{    
+{   
+    use BuildsWhereClauses; 
     use BuildsSelectQueries;
     use BuildsInsertQueries;
     use BuildsUpdateQueries;
