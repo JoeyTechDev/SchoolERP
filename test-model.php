@@ -18,11 +18,24 @@ print_r(
         ->get()
 );
 
-echo PHP_EOL;
+echo "\nExists Test\n";
+echo "===========\n\n";
 
-print_r(
+var_dump(
+
     $student
         ->query()
         ->where('id', '=', 2)
-        ->first()
+        ->exists()
+
 );
+
+echo "\nCreate Test\n";
+echo "===========\n\n";
+
+$id = $student->create([
+    'first_name' => 'Alice',
+    'last_name'  => 'Brown'
+]);
+
+echo "Inserted ID: {$id}\n";

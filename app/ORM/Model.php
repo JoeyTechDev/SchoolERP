@@ -20,8 +20,8 @@ use SchoolERP\Query\QueryBuilder;
  */
 abstract class Model
 {
-     use HasQueries;
-     
+    use HasQueries;
+
     /**
      * Database table.
      */
