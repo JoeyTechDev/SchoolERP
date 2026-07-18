@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\Query;
 
+use SchoolERP\Query\Concerns\BuildsJoinQueries;
 use SchoolERP\Query\Concerns\BuildsAggregateQueries;
 use SchoolERP\Query\Concerns\BuildsWhereClauses;
 use SchoolERP\Query\State\QueryState;
@@ -25,6 +26,7 @@ use SchoolERP\Database\Database;
  */
 final class QueryBuilder
 {   
+    use BuildsJoinQueries;
     use BuildsAggregateQueries;
     use BuildsWhereClauses; 
     use BuildsSelectQueries;
@@ -129,6 +131,12 @@ final class QueryBuilder
 
         return $this;
     }
+/**
+ * JOIN clauses.
+ *
+ * @var array<int,string>
+ */
+private array $joins = [];
 
     /**
      * Limit results.
@@ -287,6 +295,9 @@ public function delete(): int
             $columns,
             $this->state->table,
         );
+        if (!empty($this->joins)) {
+        $sql .= ' ' . implode(' ', $this->joins);
+        }
 
         if (!empty($this->wheres)) {
             $sql .= ' WHERE ' . implode(' ', $this->wheres);
@@ -325,6 +336,8 @@ public function delete(): int
 
         $this->orders = [];
 
+        $this->joins = [];
+        
         $this->limit = null;
     }
 /**
