@@ -78,6 +78,18 @@ final class QueryBuilder
     private ?int $limit = null;
 
     /**
+     * JOIN clauses.
+     *
+     * @var array<int,string>
+     */
+    private array $joins = [];
+
+    /**
+     * DISTINCT flag.
+     */
+    private bool $distinct = false;
+
+    /**
      * Create a Query Builder.
      */
     public function __construct(Database $database)
@@ -110,6 +122,15 @@ final class QueryBuilder
     }
     
     /**
+     * Select distinct records.
+     */
+    public function distinct(): self
+    {
+        $this->distinct = true;
+
+        return $this;
+    }
+    /**
      * Add ORDER BY clause.
      */
     public function orderBy(
@@ -131,12 +152,6 @@ final class QueryBuilder
 
         return $this;
     }
-/**
- * JOIN clauses.
- *
- * @var array<int,string>
- */
-private array $joins = [];
 
     /**
      * Limit results.
@@ -291,10 +306,12 @@ public function delete(): int
         $columns = implode(', ', $this->columns);
 
         $sql = sprintf(
-            'SELECT %s FROM %s',
-            $columns,
-            $this->state->table,
-        );
+    'SELECT %s%s FROM %s',
+    $this->distinct ? 'DISTINCT ' : '',
+    $columns,
+    $this->state->table
+    );
+    
         if (!empty($this->joins)) {
         $sql .= ' ' . implode(' ', $this->joins);
         }
@@ -335,10 +352,12 @@ public function delete(): int
         $this->bindings = [];
 
         $this->orders = [];
-
-        $this->joins = [];
         
         $this->limit = null;
+
+        $this->joins = [];
+
+        $this->distinct = false;
     }
 /**
  * Current query state.
