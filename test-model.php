@@ -12,11 +12,17 @@ echo "==========\n\n";
 $student = new Student();
 
 print_r(
-    $student->all()
+    $student
+        ->query()
+        ->where('id', '>', 1)
+        ->get()
 );
 
 echo PHP_EOL;
 
 print_r(
-    $student->find(1)
+    $student
+        ->query()
+        ->where('id', '=', 2)
+        ->first()
 );

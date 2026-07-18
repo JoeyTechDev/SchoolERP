@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\ORM;
 
+use SchoolERP\ORM\Concerns\HasQueries;
 use SchoolERP\Config\Config;
 use SchoolERP\Database\Database;
 use SchoolERP\Query\QueryBuilder;
@@ -19,6 +20,8 @@ use SchoolERP\Query\QueryBuilder;
  */
 abstract class Model
 {
+     use HasQueries;
+     
     /**
      * Database table.
      */
@@ -57,29 +60,4 @@ abstract class Model
         );
     }
 
-    /**
-     * Get all records.
-     *
-     * @return array<int,array<string,mixed>>
-     */
-    public function all(): array
-    {
-        return $this->query
-            ->table($this->table)
-            ->select(['*'])
-            ->get();
-    }
-
-    /**
-     * Find a record by ID.
-     *
-     * @return array<string,mixed>|null
-     */
-    public function find(int $id): ?array
-    {
-        return $this->query
-            ->table($this->table)
-            ->where('id', '=', $id)
-            ->first();
-    }
 }
