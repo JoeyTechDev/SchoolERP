@@ -36,13 +36,19 @@ namespace SchoolERP\ORM\Concerns;
      *
      * @return array<string,mixed>|null
      */
-    public function find(int $id): ?array
-    {
-        return $this->query
-            ->table($this->table)
-            ->where('id', '=', $id)
-            ->first();
+    public function find(int $id): ?static
+{
+    $record = $this->query
+        ->table($this->table)
+        ->where('id', '=', $id)
+        ->first();
+
+    if ($record === null) {
+        return null;
     }
+
+    return (new static())->fill($record);
+}
 
 /**
  * Create a new record.
@@ -64,6 +70,29 @@ public function create(array $attributes): int
 public function update(array $attributes): int
 {
     return $this->query->update($attributes);
+}
+ 
+/**
+ * Save the current model.
+ */
+public function save(): bool
+{
+    if (!$this->isDirty()) {
+        return true;
+    }
+
+    $dirty = $this->getDirty();
+
+    $id = $this->attributes['id'];
+
+    $this->query
+        ->table($this->table)
+        ->where('id', '=', $id)
+        ->update($dirty);
+
+    $this->fill($this->attributes);
+
+    return true;
 }
 
 /**
@@ -148,10 +177,15 @@ public function count(): int
      *
      * @return array<string,mixed>|null
      */
-    public function first(): ?array
+    public function first(): ?static
     {
-        return $this->query->first();
-   
+    $record = $this->query->first();
+
+    if ($record === null) {
+        return null;
+    }
+
+    return (new static())->fill($record);
     }
 
 /**
