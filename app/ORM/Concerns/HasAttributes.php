@@ -17,32 +17,31 @@ trait HasAttributes
     protected array $attributes = [];
 
     /**
-     * Original attributes from the database.
+     * Original database attributes.
      *
      * @var array<string,mixed>
      */
     protected array $original = [];
 
     /**
-     * Fill the model.
+     * Fill the model with attributes.
      *
      * @param array<string,mixed> $attributes
      */
     public function fill(array $attributes): static
-   {
-    $this->attributes = [];
+    {
+        $this->attributes = [];
 
-    foreach ($attributes as $key => $value) {
+        foreach ($attributes as $key => $value) {
+            $this->attributes[$key] = $this->castAttribute(
+                $key,
+                $value
+            );
+        }
 
-        $this->attributes[$key] = $this->castAttribute(
-            $key,
-            $value
-        );
-    }
+        $this->original = $this->attributes;
 
-    $this->original = $this->attributes;
-
-    return $this;
+        return $this;
     }
 
     /**
@@ -56,7 +55,7 @@ trait HasAttributes
     }
 
     /**
-     * Magic getter.
+     * Get an attribute.
      */
     public function __get(string $key): mixed
     {
@@ -64,7 +63,7 @@ trait HasAttributes
     }
 
     /**
-     * Magic setter.
+     * Set an attribute.
      */
     public function __set(string $key, mixed $value): void
     {
@@ -79,43 +78,85 @@ trait HasAttributes
         return isset($this->attributes[$key]);
     }
 
-/**
- * Determine changed attributes.
- *
- * @return array<string,mixed>
- */
-public function getDirty(): array
-{
-    $dirty = [];
+    /**
+     * Determine changed attributes.
+     *
+     * @return array<string,mixed>
+     */
+    public function getDirty(): array
+    {
+        $dirty = [];
 
-    foreach ($this->attributes as $key => $value) {
+        foreach ($this->attributes as $key => $value) {
 
-        if (
-            !array_key_exists($key, $this->original)
-            || $this->original[$key] !== $value
-        ) {
-            $dirty[$key] = $value;
+            if (
+                !array_key_exists($key, $this->original)
+                || $this->original[$key] !== $value
+            ) {
+                $dirty[$key] = $value;
+            }
         }
+
+        return $dirty;
     }
 
-    return $dirty;
-}
+    /**
+     * Determine whether the model has changed.
+     */
+    public function isDirty(): bool
+    {
+        return !empty($this->getDirty());
+    }
 
-/**
- * Determine whether the model has changed.
- */
-public function isDirty(): bool
-{
-    return $this->getDirty() !== [];
-}
-  
-/**
- * Convert model to an array.
- *
- * @return array<string,mixed>
- */
-public function toArray(): array
-{
-    return $this->attributes;
-}
+    /**
+     * Convert model to an array.
+     *
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        $array = [];
+
+        foreach ($this->attributes as $key => $value) {
+
+            if ($value instanceof \DateTimeInterface) {
+                $array[$key] = $value->format('Y-m-d H:i:s');
+            } else {
+                $array[$key] = $value;
+            }
+        }
+
+        return $array;
+    }
+
+    /**
+     * Convert model to JSON.
+     */
+    public function toJson(
+        int $options = JSON_PRETTY_PRINT
+    ): string {
+
+        $json = json_encode(
+            $this->toArray(),
+            $options
+        );
+
+        if ($json === false) {
+            throw new \RuntimeException(
+                json_last_error_msg()
+            );
+        }
+
+        return $json;
+    }
+
+    /**
+     * Allow json_encode($model).
+     *
+     * @return array<string,mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
 }

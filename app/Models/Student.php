@@ -8,15 +8,53 @@ use SchoolERP\ORM\Model;
 
 final class Student extends Model
 {
+    /**
+     * Database table.
+     */
     protected string $table = 'students';
+
+    /**
+     * Mass assignable attributes.
+     *
+     * @var array<int,string>
+     */
     protected array $fillable = [
-    'first_name',
-    'last_name',
+        'first_name',
+        'last_name',
+        'classroom_id',
     ];
 
+    /**
+     * Attribute casts.
+     *
+     * @var array<string,string>
+     */
     protected array $casts = [
+        'id' => 'int',
+        'classroom_id' => 'int',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
-    'id' => 'int',
+    /**
+     * Student belongs to one classroom.
+     */
+    public function classroom()
+    {
+        return $this->belongsTo(
+            Classroom::class,
+            'classroom_id'
+        );
+    }
 
-];
+    /**
+     * Student has many results.
+     */
+    public function results()
+    {
+        return $this->hasMany(
+            Result::class,
+            'student_id'
+        );
+    }
 }

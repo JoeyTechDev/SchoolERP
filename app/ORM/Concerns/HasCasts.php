@@ -50,8 +50,16 @@ trait HasCasts
             'string' => (string) $value,
 
             'array' => is_string($value)
-                ? json_decode($value, true)
-                : (array) $value,
+            ? json_decode($value, true)
+            : (array) $value,
+
+            'date' => $value === null
+            ? null
+            : new \DateTimeImmutable($value),
+
+            'datetime' => $value === null
+            ? null
+            : new \DateTimeImmutable($value),
 
             default => $value,
         };

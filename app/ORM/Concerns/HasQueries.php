@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SchoolERP\ORM\Concerns;
 
+use SchoolERP\Query\QueryBuilder;
+
     /**
      * Query methods for ORM models.
      */
@@ -57,7 +59,11 @@ namespace SchoolERP\ORM\Concerns;
  */
 public function create(array $attributes): int
 {
-    $attributes = $this->filterFillable($attributes);
+    $attributes = $this->fillable($attributes);
+
+    $attributes = $this->addCreationTimestamps(
+        $attributes
+    );
 
     return $this->query
         ->table($this->table)
@@ -84,10 +90,11 @@ public function save(): bool
     if (!$this->isDirty()) {
         return true;
     }
-
+    
+    $this->touch();
     $dirty = $this->getDirty();
     $dirty = $this->filterFillable($dirty);
-
+    
     $id = $this->attributes['id'];
 
     $this->query
@@ -150,15 +157,15 @@ public function count(): int
     return $this->query->count();
 }
 
-    /**
-     * Begin a query.
-     */
-    public function query(): static
-    {
-        $this->initializeQuery();
+/**
+ * Begin a query.
+ */
+public function query(): QueryBuilder
+{
+    $this->initializeQuery();
 
-        return $this;
-    }
+    return $this->query;
+}
 
     /**
      * Add a WHERE clause.
