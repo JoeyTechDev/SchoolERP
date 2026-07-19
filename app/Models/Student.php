@@ -47,6 +47,20 @@ final class Student extends Model
         );
     }
 
+/**
+ * Scope students in a classroom.
+ */
+public function scopeInClassroom(
+    int $classroomId
+): static {
+
+    return $this->where(
+        'classroom_id',
+        '=',
+        $classroomId
+    );
+}
+
     /**
      * Student has many results.
      */

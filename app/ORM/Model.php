@@ -6,6 +6,7 @@ namespace SchoolERP\ORM;
 
 use SchoolERP\ORM\Concerns\HasRelationships;
 use SchoolERP\ORM\Concerns\HasCasts;
+use SchoolERP\ORM\Concerns\HasScopes;
 use SchoolERP\ORM\Concerns\GuardsAttributes;
 use SchoolERP\ORM\Concerns\HasAttributes;
 use SchoolERP\ORM\Concerns\HasTimestamps;
@@ -26,6 +27,7 @@ use SchoolERP\Query\QueryBuilder;
 abstract class Model implements \JsonSerializable
 {
     use HasCasts;
+    use HasScopes;
     use GuardsAttributes;
     use HasAttributes;
     use HasQueries;

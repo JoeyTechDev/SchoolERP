@@ -158,13 +158,13 @@ public function count(): int
 }
 
 /**
- * Begin a query.
+ * Begin a new model query.
  */
-public function query(): QueryBuilder
+public function query(): static
 {
     $this->initializeQuery();
 
-    return $this->query;
+    return $this;
 }
 
     /**
@@ -233,6 +233,18 @@ public function __call(
 
     $this->initializeQuery();
 
+    /*
+     * Local Scope
+     */
+    $scope = 'scope' . ucfirst($method);
+
+    if (method_exists($this, $scope)) {
+        return $this->$scope(...$arguments);
+    }
+
+    /*
+     * Forward to Query Builder
+     */
     if (!method_exists($this->query, $method)) {
         throw new \BadMethodCallException(
             sprintf(
@@ -245,10 +257,6 @@ public function __call(
 
     $result = $this->query->$method(...$arguments);
 
-    /*
-     * If QueryBuilder returned itself,
-     * continue chaining on the model.
-     */
     if ($result instanceof \SchoolERP\Query\QueryBuilder) {
         return $this;
     }
