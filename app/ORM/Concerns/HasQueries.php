@@ -57,6 +57,8 @@ namespace SchoolERP\ORM\Concerns;
  */
 public function create(array $attributes): int
 {
+    $attributes = $this->filterFillable($attributes);
+
     return $this->query
         ->table($this->table)
         ->insert($attributes);
@@ -69,6 +71,8 @@ public function create(array $attributes): int
  */
 public function update(array $attributes): int
 {
+    $attributes = $this->filterFillable($attributes);
+
     return $this->query->update($attributes);
 }
  
@@ -82,6 +86,7 @@ public function save(): bool
     }
 
     $dirty = $this->getDirty();
+    $dirty = $this->filterFillable($dirty);
 
     $id = $this->attributes['id'];
 
@@ -98,9 +103,20 @@ public function save(): bool
 /**
  * Delete records.
  */
-public function delete(): int
+public function delete(): bool
 {
-    return $this->query->delete();
+    if (!isset($this->attributes['id'])) {
+        throw new \RuntimeException(
+            'Cannot delete a model without an ID.'
+        );
+    }
+
+    $affected = $this->query
+        ->table($this->table)
+        ->where('id', '=', $this->attributes['id'])
+        ->delete();
+
+    return $affected > 0;
 }
 
 /**

@@ -9,4 +9,8 @@ use SchoolERP\ORM\Model;
 final class Student extends Model
 {
     protected string $table = 'students';
+    protected array $fillable = [
+    'first_name',
+    'last_name',
+    ];
 }

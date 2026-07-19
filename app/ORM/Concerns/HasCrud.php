@@ -16,6 +16,8 @@ trait HasCrud
      */
     public function create(array $data): int
     {
+        $data = $this->filterFillable($data);
+
         return $this->query
             ->table($this->table)
             ->insert($data);
@@ -27,8 +29,10 @@ trait HasCrud
      * @param array<string,mixed> $data
      */
     public function update(array $data): int
-    {
-        return $this->query->update($data);
+   {
+    $data = $this->filterFillable($data);
+
+    return $this->query->update($data);
     }
 
     /**
