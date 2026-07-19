@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\Query;
 
+use SchoolERP\Query\Pagination\Paginator;
 use SchoolERP\Query\Concerns\BuildsJoinQueries;
 use SchoolERP\Query\Concerns\BuildsAggregateQueries;
 use SchoolERP\Query\Concerns\BuildsWhereClauses;
@@ -78,6 +79,11 @@ final class QueryBuilder
     private ?int $limit = null;
 
     /**
+     * Query offset.
+     */
+    private ?int $offset = null;
+
+    /**
      * JOIN clauses.
      *
      * @var array<int,string>
@@ -88,6 +94,13 @@ final class QueryBuilder
      * DISTINCT flag.
      */
     private bool $distinct = false;
+
+/**
+ * Relationships to eager load.
+ *
+ * @var array<int,string>
+ */
+private array $eagerLoads = [];
 
     /**
      * Create a Query Builder.
@@ -130,6 +143,38 @@ final class QueryBuilder
 
         return $this;
     }
+
+    /**
+ * Eager load relationships.
+ *
+ * @param string|array<int,string> $relations
+ */
+public function with(
+    string|array $relations
+): self {
+
+    if (is_string($relations)) {
+        $relations = [$relations];
+    }
+
+    $this->eagerLoads = array_merge(
+        $this->eagerLoads,
+        $relations
+    );
+
+    return $this;
+}
+
+/**
+ * Get eager-loaded relationships.
+ *
+ * @return array<int,string>
+ */
+public function getEagerLoads(): array
+{
+    return $this->eagerLoads;
+}
+
     /**
      * Add ORDER BY clause.
      */
@@ -161,6 +206,55 @@ final class QueryBuilder
         $this->limit = max(0, $limit);
 
         return $this;
+    }
+
+    /**
+     * Offset results.
+     */
+    public function offset(int $offset): self
+    {
+        $this->offset = max(0, $offset);
+
+        return $this;
+    }
+
+    /**
+     * Paginate the query results.
+     */
+    public function paginate(
+        int $perPage = 15,
+        int $page = 1
+    ): Paginator {
+
+        $page = max(1, $page);
+
+        $perPage = max(1, $perPage);
+
+    /*
+     * Count total records before applying
+     * LIMIT and OFFSET.
+     */
+    $total = $this->count();
+
+    /*
+     * Calculate offset.
+     */
+    $offset = ($page - 1) * $perPage;
+
+    /*
+     * Retrieve current page.
+     */
+    $items = $this
+        ->limit($perPage)
+        ->offset($offset)
+        ->get();
+
+    return new Paginator(
+        $items,
+        $total,
+        $perPage,
+        $page
+    );
     }
 
     /**
@@ -325,8 +419,13 @@ public function delete(): int
         }
 
         if ($this->limit !== null) {
-            $sql .= ' LIMIT ' . $this->limit;
+
+        $sql .= ' LIMIT ' . $this->limit;
+
+        if ($this->offset !== null) {
+            $sql .= ' OFFSET ' . $this->offset;
         }
+    }
 
         $results = $this->database->select(
             $sql,
@@ -343,7 +442,7 @@ public function delete(): int
      */
     private function reset(): void
     {
-        $this->state->table = '';
+        $this->state = new QueryState();
 
         $this->columns = ['*'];
 
@@ -355,9 +454,13 @@ public function delete(): int
         
         $this->limit = null;
 
+        $this->offset = null;
+
         $this->joins = [];
 
         $this->distinct = false;
+
+        $this->eagerLoads = [];
     }
 /**
  * Current query state.

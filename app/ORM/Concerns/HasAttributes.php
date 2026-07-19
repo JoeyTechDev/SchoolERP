@@ -24,6 +24,13 @@ trait HasAttributes
     protected array $original = [];
 
     /**
+     * Loaded relationships.
+     *
+     * @var array<string,mixed>
+     */
+    protected array $relations = [];
+
+    /**
      * Fill the model with attributes.
      *
      * @param array<string,mixed> $attributes
@@ -59,7 +66,21 @@ trait HasAttributes
      */
     public function __get(string $key): mixed
     {
-        return $this->attributes[$key] ?? null;
+    /*
+     * Attribute?
+     */
+    if (array_key_exists($key, $this->attributes)) {
+        return $this->attributes[$key];
+    }
+
+    /*
+     * Loaded relationship?
+     */
+    if (isset($this->relations[$key])) {
+        return $this->relations[$key];
+    }
+
+    return null;
     }
 
     /**
@@ -159,4 +180,51 @@ trait HasAttributes
     {
         return $this->toArray();
     }
+
+    /**
+ * Store a loaded relationship.
+ */
+public function setRelation(
+    string $name,
+    mixed $value
+): static {
+
+    $this->relations[$name] = $value;
+
+    return $this;
+}
+
+/**
+ * Determine whether a relation is loaded.
+ */
+public function relationLoaded(
+    string $name
+): bool {
+
+    return array_key_exists(
+        $name,
+        $this->relations
+    );
+}
+
+/**
+ * Retrieve a loaded relation.
+ */
+public function getRelation(
+    string $name
+): mixed {
+
+    return $this->relations[$name] ?? null;
+}
+
+/**
+ * Return all loaded relations.
+ *
+ * @return array<string,mixed>
+ */
+public function getRelations(): array
+{
+    return $this->relations;
+}
+
 }

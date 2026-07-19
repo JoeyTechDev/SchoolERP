@@ -195,21 +195,33 @@ public function query(): QueryBuilder
         return $this->query->get();
     }
 
-    /**
-     * Get the first matching record.
-     *
-     * @return array<string,mixed>|null
-     */
-    public function first(): ?static
-    {
+/**
+ * Get the first matching record.
+ */
+public function first(): ?static
+{
     $record = $this->query->first();
 
     if ($record === null) {
         return null;
     }
 
-    return (new static())->fill($record);
+    $model = (new static())->fill($record);
+
+    foreach ($this->query->getEagerLoads() as $relation) {
+
+        if (!method_exists($model, $relation)) {
+            continue;
+        }
+
+        $model->setRelation(
+            $relation,
+            $model->{$relation}()->get()
+        );
     }
+
+    return $model;
+}
 
 /**
  * Forward unknown methods to the Query Builder.

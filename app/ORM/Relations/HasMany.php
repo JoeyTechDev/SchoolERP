@@ -23,7 +23,7 @@ final class HasMany extends Relation
     /**
      * Get all related models.
      *
-     * @return array<int,array<string,mixed>>
+     * @return array<int,object>
      */
     public function get(): array
     {

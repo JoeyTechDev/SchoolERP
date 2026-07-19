@@ -41,8 +41,6 @@ private function aggregate(
         $this->bindings
     );
 
-    $this->reset();
-
     return $result[0]['aggregate'];
 }
 
