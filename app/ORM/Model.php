@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\ORM;
 
+use SchoolERP\ORM\Concerns\HasCasts;
 use SchoolERP\ORM\Concerns\GuardsAttributes;
 use SchoolERP\ORM\Concerns\HasAttributes;
 use SchoolERP\ORM\Concerns\HasQueries;
@@ -22,6 +23,7 @@ use SchoolERP\Query\QueryBuilder;
  */
 abstract class Model
 {
+    use HasCasts;
     use GuardsAttributes;
     use HasAttributes;
     use HasQueries;

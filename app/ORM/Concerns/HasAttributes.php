@@ -29,12 +29,20 @@ trait HasAttributes
      * @param array<string,mixed> $attributes
      */
     public function fill(array $attributes): static
-    {
-        $this->attributes = $attributes;
+   {
+    $this->attributes = [];
 
-        $this->original = $attributes;
+    foreach ($attributes as $key => $value) {
 
-        return $this;
+        $this->attributes[$key] = $this->castAttribute(
+            $key,
+            $value
+        );
+    }
+
+    $this->original = $this->attributes;
+
+    return $this;
     }
 
     /**

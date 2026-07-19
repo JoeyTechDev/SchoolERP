@@ -13,4 +13,10 @@ final class Student extends Model
     'first_name',
     'last_name',
     ];
+
+    protected array $casts = [
+
+    'id' => 'int',
+
+];
 }
