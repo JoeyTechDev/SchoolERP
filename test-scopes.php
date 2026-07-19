@@ -9,9 +9,11 @@ use SchoolERP\Models\Student;
 echo "LOCAL SCOPE TEST\n";
 echo "================\n\n";
 
-$students = (new Student())
+$student = new Student();
+
+$students = $student
+    ->scope('inClassroom', 1)
     ->query()
-    ->inClassroom(1)
     ->get();
 
 print_r($students);

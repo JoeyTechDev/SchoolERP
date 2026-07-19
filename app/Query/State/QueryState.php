@@ -5,13 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Query\State;
 
 /**
- * --------------------------------------------------------------------------
- * SchoolERP Framework
- * --------------------------------------------------------------------------
- * Query State
- * --------------------------------------------------------------------------
- *
- * Stores the current state of a query being built.
+ * Stores the mutable state of a query.
  */
 final class QueryState
 {
@@ -52,4 +46,23 @@ final class QueryState
      * LIMIT value.
      */
     public ?int $limit = null;
+
+    /**
+     * JOIN clauses.
+     *
+     * @var array<int,string>
+     */
+    public array $joins = [];
+
+    /**
+     * DISTINCT flag.
+     */
+    public bool $distinct = false;
+
+    /**
+     * Relationships to eager load.
+     *
+     * @var array<int,string>
+     */
+    public array $eagerLoads = [];
 }

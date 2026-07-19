@@ -160,11 +160,13 @@ public function count(): int
 /**
  * Begin a new model query.
  */
-public function query(): static
+public function query(): QueryBuilder
 {
     $this->initializeQuery();
 
-    return $this;
+    $this->applyGlobalScopes();
+
+    return $this->query;
 }
 
     /**

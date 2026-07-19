@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SchoolERP\ORM\Concerns;
 
+use BadMethodCallException;
+
 /**
  * Handles local and global query scopes.
  */
@@ -26,7 +28,7 @@ trait HasScopes
     }
 
     /**
-     * Apply global scopes for the current model.
+     * Apply global scopes.
      */
     protected function applyGlobalScopes(): void
     {
@@ -36,5 +38,26 @@ trait HasScopes
         ) {
             $scope($this);
         }
+    }
+
+    /**
+     * Execute a local scope.
+     */
+    public function scope(
+        string $scope,
+        mixed ...$arguments
+    ): static {
+
+        $method = 'scope' . ucfirst($scope);
+
+        if (!method_exists($this, $method)) {
+            throw new BadMethodCallException(
+                "Scope [{$scope}] does not exist."
+            );
+        }
+
+        $this->{$method}(...$arguments);
+
+        return $this;
     }
 }

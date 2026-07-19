@@ -129,7 +129,7 @@ private array $eagerLoads = [];
      */
     public function select(array $columns): self
     {
-        $this->columns = $columns;
+        $this->state->columns = $columns;
 
         return $this;
     }
@@ -397,7 +397,7 @@ public function delete(): int
      */
     public function get(): array
     {
-        $columns = implode(', ', $this->columns);
+        $columns = implode(', ', $this->state->columns);
 
         $sql = sprintf(
     'SELECT %s%s FROM %s',
@@ -444,7 +444,7 @@ public function delete(): int
     {
         $this->state = new QueryState();
 
-        $this->columns = ['*'];
+        $this->state->columns = ['*'];
 
         $this->wheres = [];
 
