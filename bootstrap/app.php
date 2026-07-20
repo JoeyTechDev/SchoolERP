@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use SchoolERP\Container\Container;
 use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Http\Kernel;
 use SchoolERP\Http\Request;
@@ -47,7 +48,16 @@ require __DIR__ . '/../routes/web.php';
 |--------------------------------------------------------------------------
 */
 
-$kernel = new Kernel($router);
+$container = new Container();
+
+$router = new Router(
+    $container
+);
+
+$kernel = new Kernel(
+    $container,
+    $router
+);;
 
 $response = $kernel->handle($request);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Routing;
 
 use SchoolERP\Exceptions\ErrorHandler;
+use SchoolERP\Container\Container;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
 
@@ -33,6 +34,11 @@ use SchoolERP\Http\Response;
  */
 final class Router
 {
+
+/****
+ * Service Container.
+ */
+private Container $container;
     /**
      * Registered routes.
      *
@@ -40,6 +46,14 @@ final class Router
      */
     private array $routes = [];
 
+/**
+ * Create a Router.
+ */
+public function __construct(
+    Container $container
+) {
+    $this->container = $container;
+}
     /**
      * Register a GET route.
      */

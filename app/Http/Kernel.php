@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\Http;
 
+use SchoolERP\Container\Container;
 use SchoolERP\Routing\Router;
 
 /**
@@ -18,6 +19,11 @@ use SchoolERP\Routing\Router;
 final class Kernel
 {
     /**
+     * Service Container.
+     */
+    private Container $container;
+
+    /**
      * Router instance.
      */
     private Router $router;
@@ -26,9 +32,19 @@ final class Kernel
      * Constructor.
      */
     public function __construct(
+        Container $container,
         Router $router
     ) {
+        $this->container = $container;
         $this->router = $router;
+    }
+
+    /**
+     * Get the service container.
+     */
+    public function container(): Container
+    {
+        return $this->container;
     }
 
     /**
