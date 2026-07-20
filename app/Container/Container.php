@@ -146,15 +146,14 @@ final class Container implements ContainerInterface
         $this->aliases = [];
     }
 
-    /**
-     * Automatically resolve a concrete class.
-     */
-    private function resolve(
+/**
+ * Automatically resolve a concrete class.
+ */
+private function resolve(
     string $class
-    ): object {
+): object {
 
     if (in_array($class, $this->resolving, true)) {
-
         throw new NotFoundException(
             'Circular dependency detected: '
             . implode(
@@ -177,28 +176,23 @@ final class Container implements ContainerInterface
         throw new NotFoundException(
             "Class {$class} does not exist."
         );
-
-    }
-
-     catch (ReflectionException) {
-
-        throw new NotFoundException(
-            "Class {$class} does not exist."
-        );
-
     }
 
     if (!$reflection->isInstantiable()) {
 
+        array_pop($this->resolving);
+
         throw new NotFoundException(
             "Class {$class} is not instantiable."
         );
-
     }
 
     $constructor = $reflection->getConstructor();
 
     if ($constructor === null) {
+
+        array_pop($this->resolving);
+
         return new $class();
     }
 
@@ -206,33 +200,39 @@ final class Container implements ContainerInterface
 
     foreach ($constructor->getParameters() as $parameter) {
 
-    $type = $parameter->getType();
+        $type = $parameter->getType();
 
-    if (!$type instanceof ReflectionNamedType) {
-        throw new NotFoundException(
-            "Unable to resolve parameter \${$parameter->getName()} in {$class}."
+        if (!$type instanceof ReflectionNamedType) {
+
+            array_pop($this->resolving);
+
+            throw new NotFoundException(
+                "Unable to resolve parameter \${$parameter->getName()} in {$class}."
+            );
+        }
+
+        if ($type->isBuiltin()) {
+
+            array_pop($this->resolving);
+
+            throw new NotFoundException(
+                "Cannot auto-resolve built-in parameter \${$parameter->getName()} in {$class}."
+            );
+        }
+
+        $dependencies[] = $this->make(
+            $type->getName()
         );
-    }
-
-    if ($type->isBuiltin()) {
-        throw new NotFoundException(
-            "Cannot auto-resolve built-in parameter \${$parameter->getName()} in {$class}."
-        );
-    }
-
-    $dependencies[] = $this->make(
-        $type->getName()
-    );
     }
 
     $instance = $reflection->newInstanceArgs(
-    $dependencies
+        $dependencies
     );
 
     array_pop($this->resolving);
 
     return $instance;
-    }
+}
 
 /**
  * Register a service provider.
