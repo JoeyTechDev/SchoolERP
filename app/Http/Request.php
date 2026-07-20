@@ -66,13 +66,18 @@ private static ?self $instance = null;
 /**
  * Private constructor.
  */
-private function __construct()
-{
-    $this->get = $_GET;
-    $this->post = $_POST;
-    $this->files = $_FILES;
-    $this->cookies = $_COOKIE;
-    $this->server = $_SERVER;
+private function __construct(
+    array $get = [],
+    array $post = [],
+    array $files = [],
+    array $cookies = [],
+    array $server = []
+) {
+    $this->get = $get;
+    $this->post = $post;
+    $this->files = $files;
+    $this->cookies = $cookies;
+    $this->server = $server;
 }
 
 /**
@@ -81,7 +86,13 @@ private function __construct()
 public static function capture(): self
 {
     if (self::$instance === null) {
-        self::$instance = new self();
+        self::$instance = new self(
+            $_GET,
+            $_POST,
+            $_FILES,
+            $_COOKIE,
+            $_SERVER
+        );
     }
 
     return self::$instance;
@@ -254,6 +265,30 @@ public function postInput(
 ): mixed {
 
     return $this->post[$key] ?? $default;
+}
+ 
+ /**
+ * Get uploaded files.
+ */
+public function files(): array
+{
+    return $this->files;
+}
+
+/**
+ * Get cookies.
+ */
+public function cookies(): array
+{
+    return $this->cookies;
+}
+
+/**
+ * Get server variables.
+ */
+public function server(): array
+{
+    return $this->server;
 }
 
 }

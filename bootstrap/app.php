@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use SchoolERP\Exceptions\ErrorHandler;
+use SchoolERP\Http\Kernel;
 use SchoolERP\Http\Request;
 use SchoolERP\Routing\Router;
 
@@ -42,8 +43,12 @@ require __DIR__ . '/../routes/web.php';
 
 /*
 |--------------------------------------------------------------------------
-| Dispatch Request
+| Handle Request Through Kernel
 |--------------------------------------------------------------------------
 */
 
-$router->dispatch($request);
+$kernel = new Kernel($router);
+
+$response = $kernel->handle($request);
+
+$response->send();

@@ -102,6 +102,78 @@ final class Response
 
         return $this;
     }
+    
+/**
+ * Get the response content.
+ */
+public function getContent(): string
+{
+    return $this->content;
+}
+
+/**
+ * Get the response status.
+ */
+public function getStatus(): int
+{
+    return $this->status;
+}
+
+/**
+ * Get response headers.
+ *
+ * @return array<string,string>
+ */
+public function getHeaders(): array
+{
+    return $this->headers;
+}
+ 
+/**
+ * Return a JSON response.
+ */
+public static function json(
+    array $data,
+    int $status = 200
+): self {
+
+    return self::make(
+        json_encode(
+            $data,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+        ) ?: '{}',
+        $status
+    )->header(
+        'Content-Type',
+        'application/json'
+    );
+}
+
+/**
+ * Redirect to another URL.
+ */
+public static function redirect(
+    string $url,
+    int $status = 302
+): self {
+
+    return self::make('', $status)
+        ->header(
+            'Location',
+            $url
+        );
+}
+
+/**
+ * Create a 404 response.
+ */
+public static function notFound(): self
+{
+    return self::make(
+        '404 Not Found',
+        404
+    );
+}
 
     /**
      * Send the response to the client.

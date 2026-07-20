@@ -69,7 +69,7 @@ final class Router
      */
     public function dispatch(
         Request $request
-    ): void {
+    ): Response {
         $method = $request->method();
 
         $path = $request->path();
@@ -80,14 +80,15 @@ final class Router
     );
 
     if ($route === null) {
-        ErrorHandler::notFound();
+        return Response::notFound();
     }
 
-    $this->executeRoute(
-    $route['action'],
-    $request,
-    $route['parameters']
+    return $this->executeRoute(
+        $route['action'],
+        $request,
+        $route['parameters']
     );
+    
     }
 
     /**
@@ -128,14 +129,14 @@ final class Router
         return null;
     }
 
-    /**
-     * Execute a matched route.
-     */
-    private function executeRoute(
-        callable $action,
-        Request $request,
-        array $parameters
-    ): void {
+/**
+ * Execute a matched route.
+ */
+private function executeRoute(
+    callable $action,
+    Request $request,
+    array $parameters
+): Response {
 
     $response = $action(
         $request,
@@ -143,13 +144,13 @@ final class Router
     );
 
     if ($response instanceof Response) {
-        $response->send();
-        return;
+        return $response;
     }
 
-    Response::make((string) $response)
-        ->send();
-    } 
-
+    return Response::make(
+        (string) $response
+    );
+}
 
 }
+
