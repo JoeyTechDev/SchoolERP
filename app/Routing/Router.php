@@ -39,11 +39,17 @@ final class Router
  * Service Container.
  */
 private Container $container;
-    /**
-     * Registered routes.
-     *
-     * @var array<string,array<string,callable>>
-     */
+/**
+ * Registered routes.
+ *
+ * @var array<
+ *     string,
+ *     array<
+ *         string,
+ *         callable|array{class-string,string}
+ *     >
+ * >
+ */
     private array $routes = [];
 
 /**
@@ -59,7 +65,7 @@ public function __construct(
      */
     public function get(
         string $uri,
-        callable $action
+        callable|array $action
     ): self {
         $this->routes['GET'][$uri] = $action;
 
@@ -71,7 +77,7 @@ public function __construct(
      */
     public function post(
         string $uri,
-        callable $action
+        callable|array $action
     ): self {
         $this->routes['POST'][$uri] = $action;
 
@@ -109,7 +115,7 @@ public function __construct(
      * Attempt to match a route.
      *
      * @return array{
-     *     action: callable,
+     *     action: callable|array{class-string,string},
      *     parameters: array<int,string>
      * }|null
      */
@@ -143,19 +149,42 @@ public function __construct(
         return null;
     }
 
-/**
- * Execute a matched route.
- */
-private function executeRoute(
-    callable $action,
-    Request $request,
-    array $parameters
-): Response {
+    /**
+     * Execute a matched route.
+     */
+    private function executeRoute(
+        callable|array $action,
+        Request $request,
+        array $parameters
+    ): Response {
 
-    $response = $action(
-        $request,
-        ...$parameters
-    );
+    /*
+     * Controller action:
+     * [Controller::class, 'method']
+     */
+    if (is_array($action)) {
+
+        [$controllerClass, $method] = $action;
+
+        $controller = $this->container->make(
+            $controllerClass
+        );
+
+        $response = $controller->$method(
+            $request,
+            ...$parameters
+        );
+
+    } else {
+
+        /*
+         * Closure route.
+         */
+        $response = $action(
+            $request,
+            ...$parameters
+        );
+    }
 
     if ($response instanceof Response) {
         return $response;
@@ -164,7 +193,6 @@ private function executeRoute(
     return Response::make(
         (string) $response
     );
+ 
+    }
 }
-
-}
-
