@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Repositories;
 
 use SchoolERP\Models\Student;
+use SchoolERP\Query\Pagination\Paginator;
 
 final class StudentRepository extends Repository
 {
@@ -20,8 +21,9 @@ final class StudentRepository extends Repository
      *
      * @return array<int,array<string,mixed>>
      */
-    public function inClassroom(int $classroomId): array
-    {
+    public function inClassroom(
+        int $classroomId
+    ): array {
         return $this->model
             ->scope('inClassroom', $classroomId)
             ->query()
@@ -34,9 +36,13 @@ final class StudentRepository extends Repository
     public function paginate(
         int $page = 1,
         int $perPage = 10
-    ) {
+    ): Paginator {
+
         return $this->model
             ->query()
-            ->paginate($page, $perPage);
+            ->paginate(
+                $perPage,
+                $page
+            );
     }
 }

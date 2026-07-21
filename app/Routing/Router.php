@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SchoolERP\Routing;
 
-use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Container\Container;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
