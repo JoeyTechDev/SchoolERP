@@ -9,9 +9,18 @@ use SchoolERP\Repositories\StudentRepository;
 
 final class StudentController extends Controller
 {
+    /**
+     * Student repository.
+     */
+    private StudentRepository $students;
+
+    /**
+     * Constructor.
+     */
     public function __construct(
-        private StudentRepository $students
+        StudentRepository $students
     ) {
+        $this->students = $students;
     }
 
     /**
@@ -20,12 +29,21 @@ final class StudentController extends Controller
     public function index(
         Request $request
     ) {
-        $students = $this->students->paginate();
+        $page = (int) $request->input(
+            'page',
+            1
+        );
 
-        return $this->json([
-            'current_page' => $students->currentPage(),
-            'total' => $students->total(),
-            'students' => $students->items(),
-        ]);
+        $students = $this->students->paginate(
+            $page,
+            10
+        );
+
+        return $this->view(
+            'students.index',
+            [
+                'students' => $students,
+            ]
+        );
     }
 }
