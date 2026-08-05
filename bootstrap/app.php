@@ -6,17 +6,10 @@ use SchoolERP\Container\Container;
 use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Http\Kernel;
 use SchoolERP\Http\Request;
+use SchoolERP\Middleware\MaintenanceMiddleware;
 use SchoolERP\Routing\Router;
 
 require_once __DIR__ . '/../vendor/autoload.php';
-
-/*
-|--------------------------------------------------------------------------
-| Load Global Helpers
-|--------------------------------------------------------------------------
-*/
-
-require_once __DIR__ . '/../app/Support/helpers.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +61,16 @@ $kernel = new Kernel(
     $container,
     $router
 );
+
+/*
+|--------------------------------------------------------------------------
+| Register Global Middleware
+|--------------------------------------------------------------------------
+*/
+
+$kernel->middleware([
+    MaintenanceMiddleware::class,
+]);
 
 /*
 |--------------------------------------------------------------------------

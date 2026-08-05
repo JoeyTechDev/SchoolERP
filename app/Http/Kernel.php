@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Http;
 
 use SchoolERP\Container\Container;
+use SchoolERP\Middleware\Pipeline;
 use SchoolERP\Routing\Router;
 
 /**
@@ -14,19 +15,31 @@ use SchoolERP\Routing\Router;
  * HTTP Kernel
  * --------------------------------------------------------------------------
  *
- * Handles every incoming HTTP request.
+ * The application's central request handler.
  */
 final class Kernel
 {
     /**
-     * Service Container.
+     * Service container.
      */
     private Container $container;
 
     /**
-     * Router instance.
+     * Router.
      */
     private Router $router;
+
+    /**
+     * Middleware pipeline.
+     */
+    private Pipeline $pipeline;
+
+    /**
+     * Global middleware.
+     *
+     * @var array<int,class-string>
+     */
+    private array $middleware = [];
 
     /**
      * Constructor.
@@ -37,6 +50,15 @@ final class Kernel
     ) {
         $this->container = $container;
         $this->router = $router;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Resolve Pipeline from the Container
+        |--------------------------------------------------------------------------
+        */
+        $this->pipeline = $container->make(
+            Pipeline::class
+        );
     }
 
     /**
@@ -48,12 +70,35 @@ final class Kernel
     }
 
     /**
+     * Register global middleware.
+     *
+     * @param array<int,class-string> $middleware
+     */
+    public function middleware(
+        array $middleware
+    ): self {
+
+        $this->middleware = $middleware;
+
+        return $this;
+    }
+
+    /**
      * Handle an incoming request.
      */
     public function handle(
         Request $request
     ): Response {
 
-        return $this->router->dispatch($request);
+        return $this->pipeline
+            ->through($this->middleware)
+            ->process(
+
+                $request,
+
+                fn (Request $request): Response
+                    => $this->router->dispatch($request)
+
+            );
     }
 }
