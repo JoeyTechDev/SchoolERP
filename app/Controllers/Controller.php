@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Controllers;
 
 use SchoolERP\Http\Response;
+use SchoolERP\View\ViewFactory;
 
 /**
  * --------------------------------------------------------------------------
@@ -13,10 +14,26 @@ use SchoolERP\Http\Response;
  * Base Controller
  * --------------------------------------------------------------------------
  *
- * Parent controller for all application controllers.
+ * Base class for all controllers.
  */
 abstract class Controller
 {
+    /**
+     * View Factory.
+     */
+    private ViewFactory $views;
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        $this->views = new ViewFactory(
+            dirname(__DIR__, 2)
+            . '/app/views'
+        );
+    }
+
     /**
      * Render a view.
      *
@@ -24,20 +41,19 @@ abstract class Controller
      */
     protected function view(
         string $view,
-        array $data = [],
-        int $status = 200
+        array $data = []
     ): Response {
 
-        return Response::make(
-            view($view, $data),
-            $status
-        );
+        $html = $this->views
+            ->layout('app')
+            ->make($view, $data)
+            ->render();
+
+        return Response::make($html);
     }
 
     /**
      * Return JSON.
-     *
-     * @param array<string,mixed> $data
      */
     protected function json(
         array $data,
@@ -61,7 +77,7 @@ abstract class Controller
     }
 
     /**
-     * Plain text response.
+     * Plain response.
      */
     protected function response(
         string $content,

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace SchoolERP\View;
 
+use SchoolERP\View\Layout\LayoutManager;
+
 /**
  * --------------------------------------------------------------------------
  * SchoolERP Framework
  * --------------------------------------------------------------------------
  * View Factory
  * --------------------------------------------------------------------------
- *
- * Creates renderable View instances.
  */
 final class ViewFactory
 {
@@ -19,6 +19,11 @@ final class ViewFactory
      * Base views directory.
      */
     private string $viewPath;
+
+    /**
+     * Layout manager.
+     */
+    private LayoutManager $layout;
 
     /**
      * Constructor.
@@ -29,10 +34,12 @@ final class ViewFactory
             $viewPath,
             DIRECTORY_SEPARATOR
         );
+
+        $this->layout = new LayoutManager();
     }
 
     /**
-     * Create a view instance.
+     * Create a view.
      *
      * @param array<string,mixed> $data
      */
@@ -40,10 +47,24 @@ final class ViewFactory
         string $view,
         array $data = []
     ): View {
+
         return new View(
             $this->viewPath,
             $view,
+            $this->layout,
             $data
         );
+    }
+
+    /**
+     * Use a layout.
+     */
+    public function layout(
+        string $layout
+    ): self {
+
+        $this->layout->setLayout($layout);
+
+        return $this;
     }
 }

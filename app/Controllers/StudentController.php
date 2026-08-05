@@ -5,8 +5,16 @@ declare(strict_types=1);
 namespace SchoolERP\Controllers;
 
 use SchoolERP\Http\Request;
+use SchoolERP\Http\Response;
 use SchoolERP\Repositories\StudentRepository;
 
+/**
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Student Controller
+ * --------------------------------------------------------------------------
+ */
 final class StudentController extends Controller
 {
     /**
@@ -17,10 +25,11 @@ final class StudentController extends Controller
     /**
      * Constructor.
      */
-    public function __construct(
-        StudentRepository $students
-    ) {
-        $this->students = $students;
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->students = new StudentRepository();
     }
 
     /**
@@ -28,13 +37,11 @@ final class StudentController extends Controller
      */
     public function index(
         Request $request
-    ) {
-        $page = (int) $request->input(
-            'page',
-            1
-        );
+    ): Response {
 
-        $students = $this->students->paginate(
+        $page = (int) $request->get('page', 1);
+
+        $pagination = $this->students->paginate(
             $page,
             10
         );
@@ -42,7 +49,8 @@ final class StudentController extends Controller
         return $this->view(
             'students.index',
             [
-                'students' => $students,
+                'students' => $pagination->items(),
+                'pagination' => $pagination,
             ]
         );
     }
