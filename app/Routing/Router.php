@@ -7,6 +7,8 @@ namespace SchoolERP\Routing;
 use SchoolERP\Container\Container;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
+use ReflectionMethod;
+use ReflectionNamedType;
 
 /**
  * --------------------------------------------------------------------------
@@ -148,19 +150,107 @@ public function __construct(
         return null;
     }
 
-    /**
-     * Execute a matched route.
-     */
-    private function executeRoute(
-        callable|array $action,
-        Request $request,
-        array $parameters
-    ): Response {
+/**
+ * Resolve controller method dependencies.
+ *
+ * @param array<int,string> $routeParameters
+ *
+ * @return array<int,mixed>
+ */
+private function resolveMethodDependencies(
+    object $controller,
+    string $method,
+    Request $request,
+    array $routeParameters
+): array {
+
+    $reflection = new ReflectionMethod(
+        $controller,
+        $method
+    );
+
+    $arguments = [];
+
+    $routeIndex = 0;
+
+    foreach (
+        $reflection->getParameters()
+        as $parameter
+    ) {
+
+        $type = $parameter->getType();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Untyped parameter
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$type instanceof ReflectionNamedType) {
+
+            $arguments[] =
+                $routeParameters[$routeIndex++] ?? null;
+
+            continue;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Built-in type
+        |--------------------------------------------------------------------------
+        */
+
+        if ($type->isBuiltin()) {
+
+            $arguments[] =
+                $routeParameters[$routeIndex++] ?? null;
+
+            continue;
+        }
+
+        $class = $type->getName();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Current Request
+        |--------------------------------------------------------------------------
+        */
+
+        if ($class === Request::class) {
+
+            $arguments[] = $request;
+
+            continue;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Resolve through Container
+        |--------------------------------------------------------------------------
+        */
+
+        $arguments[] = $this->container->make(
+            $class
+        );
+    }
+
+    return $arguments;
+}
+
+/**
+ * Execute a matched route.
+ */
+private function executeRoute(
+    callable|array $action,
+    Request $request,
+    array $parameters
+): Response {
 
     /*
-     * Controller action:
-     * [Controller::class, 'method']
-     */
+    |--------------------------------------------------------------------------
+    | Controller Action
+    |--------------------------------------------------------------------------
+    */
     if (is_array($action)) {
 
         [$controllerClass, $method] = $action;
@@ -169,16 +259,24 @@ public function __construct(
             $controllerClass
         );
 
-        $response = $controller->$method(
+        $arguments = $this->resolveMethodDependencies(
+            $controller,
+            $method,
             $request,
-            ...$parameters
+            $parameters
+        );
+
+        $response = $controller->$method(
+            ...$arguments
         );
 
     } else {
 
         /*
-         * Closure route.
-         */
+        |--------------------------------------------------------------------------
+        | Closure Route
+        |--------------------------------------------------------------------------
+        */
         $response = $action(
             $request,
             ...$parameters
@@ -192,6 +290,5 @@ public function __construct(
     return Response::make(
         (string) $response
     );
- 
     }
 }

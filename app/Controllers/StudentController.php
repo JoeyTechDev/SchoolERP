@@ -49,8 +49,7 @@ final class StudentController extends Controller
         return $this->view(
             'students.index',
             [
-                'students' => $pagination->items(),
-                'pagination' => $pagination,
+                'students' => $pagination,
             ]
         );
     }
