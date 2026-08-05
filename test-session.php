@@ -2,95 +2,118 @@
 
 declare(strict_types=1);
 
-use SchoolERP\Container\Container;
-use SchoolERP\Exceptions\ErrorHandler;
-use SchoolERP\Http\Kernel;
-use SchoolERP\Http\Request;
-use SchoolERP\Middleware\MaintenanceMiddleware;
-use SchoolERP\Routing\Router;
-use SchoolERP\Session\SessionInterface;
+ob_start();
+
+require __DIR__ . '/vendor/autoload.php';
+
 use SchoolERP\Session\SessionManager;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+$session = new SessionManager();
+
+$results = [];
 
 /*
 |--------------------------------------------------------------------------
-| Register Error Handling
+| Start Session
 |--------------------------------------------------------------------------
 */
 
-ErrorHandler::registerGlobalHandlers();
+$session->start();
+
+$results[] = [
+    'Session Started',
+    $session->isStarted()
+];
 
 /*
 |--------------------------------------------------------------------------
-| Capture Request
+| Put
 |--------------------------------------------------------------------------
 */
 
-$request = Request::capture();
+$session->put('framework', 'SchoolERP');
+
+$results[] = [
+    'Put Test',
+    $session->get('framework') === 'SchoolERP'
+];
 
 /*
 |--------------------------------------------------------------------------
-| Create Container
+| Has
 |--------------------------------------------------------------------------
 */
 
-$container = new Container();
+$results[] = [
+    'Has Test',
+    $session->has('framework')
+];
 
 /*
 |--------------------------------------------------------------------------
-| Register Core Services
+| Forget
 |--------------------------------------------------------------------------
 */
 
-$container->singleton(
-    SessionInterface::class,
-    SessionManager::class
-);
+$session->forget('framework');
+
+$results[] = [
+    'Forget Test',
+    !$session->has('framework')
+];
 
 /*
 |--------------------------------------------------------------------------
-| Create Router
+| Flush
 |--------------------------------------------------------------------------
 */
 
-$router = new Router($container);
+$session->put('a', 1);
+$session->put('b', 2);
+
+$session->flush();
+
+$results[] = [
+    'Flush Test',
+    count($session->all()) === 0
+];
 
 /*
 |--------------------------------------------------------------------------
-| Load Routes
+| Regenerate
 |--------------------------------------------------------------------------
 */
 
-require __DIR__ . '/../routes/web.php';
+$results[] = [
+    'Regenerate Test',
+    $session->regenerate()
+];
 
 /*
 |--------------------------------------------------------------------------
-| Create Kernel
+| Destroy
 |--------------------------------------------------------------------------
 */
 
-$kernel = new Kernel(
-    $container,
-    $router
-);
+$results[] = [
+    'Destroy Test',
+    $session->destroy()
+];
+
+ob_end_clean();
 
 /*
 |--------------------------------------------------------------------------
-| Register Global Middleware
+| Display Results
 |--------------------------------------------------------------------------
 */
 
-$kernel->middleware([
-    MaintenanceMiddleware::class,
-]);
+echo PHP_EOL;
+echo "SESSION TEST" . PHP_EOL;
+echo "============" . PHP_EOL . PHP_EOL;
 
-/*
-|--------------------------------------------------------------------------
-| Handle Request
-|--------------------------------------------------------------------------
-*/
+foreach ($results as [$name, $passed]) {
+    echo $name . ': ' . ($passed ? 'PASSED' : 'FAILED') . PHP_EOL;
+}
 
-$response = $kernel->handle($request);
-
-$response->send();
+echo PHP_EOL;
