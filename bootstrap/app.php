@@ -7,6 +7,7 @@ use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Http\Kernel;
 use SchoolERP\Http\Request;
 use SchoolERP\Middleware\MaintenanceMiddleware;
+use SchoolERP\Middleware\SessionMiddleware;
 use SchoolERP\Routing\Router;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Session\SessionManager;
@@ -36,6 +37,11 @@ $request = Request::capture();
 */
 
 $container = new Container();
+
+$container->instance(
+    Container::class,
+    $container
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +88,7 @@ $kernel = new Kernel(
 */
 
 $kernel->middleware([
+    SessionMiddleware::class,
     MaintenanceMiddleware::class,
 ]);
 

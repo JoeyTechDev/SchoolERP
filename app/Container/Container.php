@@ -80,9 +80,13 @@ final class Container implements ContainerInterface
 
             $target = $concrete ?? $abstract;
 
-            $concrete = static fn (
-                ContainerInterface $container
-            ) => new $target();
+            $concrete = function (
+        ContainerInterface $container
+        ) use (
+        $target
+    ) {
+        return $this->resolve($target);
+    };
         }
 
         $this->bindings[$abstract] = $concrete;
@@ -100,9 +104,13 @@ final class Container implements ContainerInterface
 
             $target = $concrete ?? $abstract;
 
-            $concrete = static fn (
-                ContainerInterface $container
-            ) => new $target();
+            $concrete = function (
+        ContainerInterface $container
+        ) use (
+            $target
+        ) {
+        return $this->resolve($target);
+        };
         }
 
         $this->bindings[$abstract] = function (
