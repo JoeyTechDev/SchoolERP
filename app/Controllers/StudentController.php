@@ -14,6 +14,11 @@ use SchoolERP\Repositories\StudentRepository;
  * --------------------------------------------------------------------------
  * Student Controller
  * --------------------------------------------------------------------------
+ *
+ * Handles student-related HTTP requests.
+ *
+ * Dependencies are injected automatically through
+ * the framework service container.
  */
 final class StudentController extends Controller
 {
@@ -25,11 +30,12 @@ final class StudentController extends Controller
     /**
      * Constructor.
      */
-    public function __construct()
-    {
+    public function __construct(
+        StudentRepository $students
+    ) {
         parent::__construct();
 
-        $this->students = new StudentRepository();
+        $this->students = $students;
     }
 
     /**
@@ -39,7 +45,10 @@ final class StudentController extends Controller
         Request $request
     ): Response {
 
-        $page = (int) $request->get('page', 1);
+        $page = max(
+            1,
+            (int) $request->get('page', 1)
+        );
 
         $pagination = $this->students->paginate(
             $page,
