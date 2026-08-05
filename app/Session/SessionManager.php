@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SchoolERP\Session;
 
+use SchoolERP\Session\Flash\FlashBag;
+
 /**
  * --------------------------------------------------------------------------
  * SchoolERP Framework
@@ -14,7 +16,20 @@ namespace SchoolERP\Session;
  * Native PHP session implementation.
  */
 final class SessionManager implements SessionInterface
-{
+{    
+    /**
+     * Flash message manager.
+     */
+    private FlashBag $flash;
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        $this->flash = new FlashBag();
+    }
+
     /**
      * Start the session.
      */
@@ -145,5 +160,50 @@ final class SessionManager implements SessionInterface
         $this->start();
 
         $_SESSION = [];
+    }
+
+        /**
+     * Store or retrieve a flash message.
+     */
+    public function flash(
+        string $key,
+        mixed $value = null
+    ): mixed {
+
+        $this->start();
+
+        if (func_num_args() === 2) {
+
+            $this->flash->put(
+                $key,
+                $value
+            );
+
+            return null;
+        }
+
+        return $this->flash->get($key);
+    }
+
+    /**
+     * Determine whether a flash message exists.
+     */
+    public function hasFlash(
+        string $key
+    ): bool {
+
+        $this->start();
+
+        return $this->flash->has($key);
+    }
+
+    /**
+     * Remove all flash messages.
+     */
+    public function clearFlash(): void
+    {
+        $this->start();
+
+        $this->flash->clear();
     }
 }

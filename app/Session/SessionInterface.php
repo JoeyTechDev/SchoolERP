@@ -76,4 +76,24 @@ interface SessionInterface
      * Clear all session data.
      */
     public function flush(): void;
+
+    /**
+     * Store or retrieve a flash message.
+     */
+    public function flash(
+        string $key,
+        mixed $value = null
+    ): mixed;
+
+    /**
+     * Determine whether a flash message exists.
+     */
+    public function hasFlash(
+        string $key
+    ): bool;
+
+    /**
+     * Remove all flash messages.
+     */
+    public function clearFlash(): void;
 }
