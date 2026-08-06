@@ -12,8 +12,11 @@ use SchoolERP\Routing\Router;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Session\SessionManager;
 use SchoolERP\View\ViewFactory;
+use SchoolERP\Security\Csrf;
+use SchoolERP\Middleware\VerifyCsrfMiddleware;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../app/Support/helpers.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +41,7 @@ $request = Request::capture();
 */
 
 $container = new Container();
+$GLOBALS['container'] = $container;
 
 $container->instance(
     Container::class,
@@ -60,6 +64,14 @@ $container->singleton(
     function () {
         return new ViewFactory(
             dirname(__DIR__) . '/app/views'
+        );
+    }
+);
+$container->singleton(
+    Csrf::class,
+    function (Container $container) {
+        return new Csrf(
+            $container->make(SessionInterface::class)
         );
     }
 );
@@ -99,6 +111,7 @@ $kernel = new Kernel(
 
 $kernel->middleware([
     SessionMiddleware::class,
+    VerifyCsrfMiddleware::class,
     MaintenanceMiddleware::class,
 ]);
 

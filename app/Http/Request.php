@@ -164,11 +164,18 @@ public function query(): array
 }
 
 /**
- * Get all POST parameters.
+ * Get POST data.
  */
-public function post(): array
-{
-    return $this->post;
+public function post(
+    ?string $key = null,
+    mixed $default = null
+): mixed {
+
+    if ($key === null) {
+        return $this->post;
+    }
+
+    return $this->post[$key] ?? $default;
 }
 
 /**
@@ -254,17 +261,6 @@ public function get(
 ): mixed {
 
     return $this->get[$key] ?? $default;
-}
-
-/**
- * Get a POST parameter.
- */
-public function postInput(
-    string $key,
-    mixed $default = null
-): mixed {
-
-    return $this->post[$key] ?? $default;
 }
  
  /**

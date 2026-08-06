@@ -2,31 +2,48 @@
 
 declare(strict_types=1);
 
-use SchoolERP\View\ViewFactory;
+use SchoolERP\Security\Csrf;
 
-if (!function_exists('view')) {
+if (!function_exists('csrf')) {
 
     /**
-     * Render a view.
-     *
-     * @param array<string,mixed> $data
+     * Resolve the CSRF service.
      */
-    function view(
-        string $view,
-        array $data = []
-    ): string {
+    function csrf(): Csrf
+    {
+        global $container;
 
-        static $factory = null;
+        return $container->make(
+            Csrf::class
+        );
+    }
+}
 
-        if ($factory === null) {
+if (!function_exists('csrf_token')) {
 
-            $factory = new ViewFactory(
-                dirname(__DIR__) . '/Views'
-            );
-        }
+    /**
+     * Get the current CSRF token.
+     */
+    function csrf_token(): string
+    {
+        return csrf()->token();
+    }
+}
 
-        return $factory
-            ->make($view, $data)
-            ->render();
+if (!function_exists('csrf_field')) {
+
+    /**
+     * Generate a hidden CSRF field.
+     */
+    function csrf_field(): string
+    {
+        return sprintf(
+            '<input type="hidden" name="_token" value="%s">',
+            htmlspecialchars(
+                csrf_token(),
+                ENT_QUOTES,
+                'UTF-8'
+            )
+        );
     }
 }
