@@ -4,14 +4,13 @@
 <head>
 
     <meta charset="UTF-8">
-
     <title>Students</title>
 
     <style>
 
         body{
-            font-family:Arial,sans-serif;
-            margin:40px;
+            font-family: Arial, sans-serif;
+            margin: 40px;
         }
 
         table{
@@ -46,19 +45,27 @@
 <thead>
 
 <tr>
-
     <th>ID</th>
     <th>First Name</th>
     <th>Last Name</th>
     <th>Classroom</th>
-
 </tr>
 
 </thead>
 
 <tbody>
 
-<?php foreach ($students->items() as $student): ?>
+<?php if (empty($students)): ?>
+
+<tr>
+    <td colspan="4" style="text-align:center;">
+        No students found.
+    </td>
+</tr>
+
+<?php else: ?>
+
+<?php foreach ($students as $student): ?>
 
 <tr>
 
@@ -74,19 +81,23 @@
 
 <?php endforeach; ?>
 
+<?php endif; ?>
+
 </tbody>
 
 </table>
+
+<hr>
 
 <p>
 
 Page
 
-<strong><?= $students->currentPage(); ?></strong>
+<strong><?= $pagination->currentPage(); ?></strong>
 
 of
 
-<strong><?= $students->lastPage(); ?></strong>
+<strong><?= $pagination->lastPage(); ?></strong>
 
 </p>
 
@@ -94,7 +105,7 @@ of
 
 Total Students:
 
-<strong><?= $students->total(); ?></strong>
+<strong><?= $pagination->total(); ?></strong>
 
 </p>
 

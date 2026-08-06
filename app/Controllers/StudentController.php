@@ -7,6 +7,8 @@ namespace SchoolERP\Controllers;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
 use SchoolERP\Repositories\StudentRepository;
+use SchoolERP\Session\SessionInterface;
+use SchoolERP\View\ViewFactory;
 
 /**
  * --------------------------------------------------------------------------
@@ -14,11 +16,6 @@ use SchoolERP\Repositories\StudentRepository;
  * --------------------------------------------------------------------------
  * Student Controller
  * --------------------------------------------------------------------------
- *
- * Handles student-related HTTP requests.
- *
- * Dependencies are injected automatically through
- * the framework service container.
  */
 final class StudentController extends Controller
 {
@@ -31,9 +28,14 @@ final class StudentController extends Controller
      * Constructor.
      */
     public function __construct(
+        ViewFactory $views,
+        SessionInterface $session,
         StudentRepository $students
     ) {
-        parent::__construct();
+        parent::__construct(
+            $views,
+            $session
+        );
 
         $this->students = $students;
     }
@@ -45,10 +47,7 @@ final class StudentController extends Controller
         Request $request
     ): Response {
 
-        $page = max(
-            1,
-            (int) $request->get('page', 1)
-        );
+        $page = (int) $request->get('page', 1);
 
         $pagination = $this->students->paginate(
             $page,
@@ -58,7 +57,8 @@ final class StudentController extends Controller
         return $this->view(
             'students.index',
             [
-                'students' => $pagination,
+                'students' => $pagination->items(),
+                'pagination' => $pagination,
             ]
         );
     }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace SchoolERP\Controllers;
 
 use SchoolERP\Http\Response;
+use SchoolERP\Http\RedirectResponse;
+use SchoolERP\Session\SessionInterface;
 use SchoolERP\View\ViewFactory;
 
 /**
@@ -19,19 +21,24 @@ use SchoolERP\View\ViewFactory;
 abstract class Controller
 {
     /**
-     * View Factory.
+     * View factory.
      */
-    private ViewFactory $views;
+    protected ViewFactory $views;
+
+    /**
+     * Session manager.
+     */
+    protected SessionInterface $session;
 
     /**
      * Constructor.
      */
-    public function __construct()
-    {
-        $this->views = new ViewFactory(
-            dirname(__DIR__, 2)
-            . '/app/views'
-        );
+    public function __construct(
+        ViewFactory $views,
+        SessionInterface $session
+    ) {
+        $this->views = $views;
+        $this->session = $session;
     }
 
     /**
@@ -53,7 +60,7 @@ abstract class Controller
     }
 
     /**
-     * Return JSON.
+     * JSON response.
      */
     protected function json(
         array $data,
@@ -67,13 +74,19 @@ abstract class Controller
     }
 
     /**
-     * Redirect.
+     * Redirect response.
      */
     protected function redirect(
-        string $url
-    ): Response {
+        string $url,
+        int $status = 302
+    ): RedirectResponse {
 
-        return Response::redirect($url);
+        return (new RedirectResponse(
+            $url,
+            $status
+        ))->session(
+            $this->session
+        );
     }
 
     /**

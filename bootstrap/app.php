@@ -11,6 +11,7 @@ use SchoolERP\Middleware\SessionMiddleware;
 use SchoolERP\Routing\Router;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Session\SessionManager;
+use SchoolERP\View\ViewFactory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -52,6 +53,15 @@ $container->instance(
 $container->singleton(
     SessionInterface::class,
     SessionManager::class
+);
+
+$container->singleton(
+    ViewFactory::class,
+    function () {
+        return new ViewFactory(
+            dirname(__DIR__) . '/app/views'
+        );
+    }
 );
 
 /*
