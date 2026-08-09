@@ -348,6 +348,8 @@ if (str_starts_with($rule, 'not_in:')) {
 |
 | 'password_confirmation' => 'same:password'
 |
+| The field must match another field.
+|
 */
 
 if (str_starts_with($rule, 'same:')) {
@@ -357,11 +359,40 @@ if (str_starts_with($rule, 'same:')) {
         5
     );
 
+    /*
+    |----------------------------------------------------------------------
+    | The comparison field must exist.
+    |----------------------------------------------------------------------
+    */
+
+    if (!array_key_exists(
+        $otherField,
+        $this->data
+    )) {
+
+        $this->addError(
+            $field,
+            'The ' . $field
+            . ' field must match the '
+            . $otherField
+            . ' field.'
+        );
+
+        return;
+    }
+
     $otherValue = $this->data[
         $otherField
-    ] ?? null;
+    ];
+
+    /*
+    |----------------------------------------------------------------------
+    | Compare values.
+    |----------------------------------------------------------------------
+    */
 
     if ($value !== $otherValue) {
+
         $this->addError(
             $field,
             'The ' . $field

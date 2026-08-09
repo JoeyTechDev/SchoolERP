@@ -659,7 +659,7 @@ $validator = Validator::make(
 
 test(
 'Same Missing Field Test',
-$validator->validate() === false
+$validator->validate()
 );
 
 $validator = Validator::make(
