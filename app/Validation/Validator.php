@@ -271,6 +271,41 @@ if ($rule === 'numeric') {
     return;
 }
 
+/*
+|--------------------------------------------------------------------------
+| In
+|--------------------------------------------------------------------------
+|
+| Example:
+|
+| 'status' => 'required|in:active,inactive'
+|
+*/
+
+if (str_starts_with($rule, 'in:')) {
+
+    $allowed = explode(
+        ',',
+        substr($rule, 3)
+    );
+
+    if (!in_array(
+        (string) $value,
+        $allowed,
+        true
+    )) {
+        $this->addError(
+            $field,
+            'The ' . $field
+            . ' field must be one of: '
+            . implode(', ', $allowed)
+            . '.'
+        );
+    }
+
+    return;
+}
+
 }
 
 /*

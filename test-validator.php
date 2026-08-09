@@ -433,3 +433,85 @@ isset($errors[0])
 && $errors[0] ===
 'The score field must be a number.'
 );
+
+/*                                                                         |
+| -------------------------------------------------------------------------- |
+| In Rule Tests                                                              |
+| -------------------------------------------------------------------------- |
+*/                                                                         
+
+$validator = Validator::make(
+[
+'status' => 'active',
+],
+[
+'status' => 'in:active,inactive',
+]
+);
+
+test(
+'In Pass Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'status' => 'inactive',
+],
+[
+'status' => 'in:active,inactive',
+]
+);
+
+test(
+'In Second Allowed Value Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'status' => 'pending',
+],
+[
+'status' => 'in:active,inactive',
+]
+);
+
+test(
+'In Fail Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'status' => '',
+],
+[
+'status' => 'in:active,inactive',
+]
+);
+
+test(
+'Empty In Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'status' => 'pending',
+],
+[
+'status' => 'in:active,inactive',
+]
+);
+
+$validator->validate();
+
+$errors = $validator->errorsFor('status');
+
+test(
+'In Error Message Test',
+isset($errors[0])
+&& $errors[0] ===
+'The status field must be one of: active, inactive.'
+);
