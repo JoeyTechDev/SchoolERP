@@ -351,3 +351,85 @@ isset($errors[0])
 && $errors[0] ===
 'The password field confirmation does not match.'
 );
+
+/*                                                                         
+| -------------------------------------------------------------------------- |
+| Numeric Rule Tests                                                         |
+| -------------------------------------------------------------------------- |
+*/                                                                         
+
+$validator = Validator::make(
+[
+'score' => '85',
+],
+[
+'score' => 'numeric',
+]
+);
+
+test(
+'Numeric Pass Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'score' => 'eighty-five',
+],
+[
+'score' => 'numeric',
+]
+);
+
+test(
+'Numeric Fail Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'score' => '',
+],
+[
+'score' => 'numeric',
+]
+);
+
+test(
+'Empty Numeric Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'score' => '',
+],
+[
+'score' => 'required|numeric',
+]
+);
+
+test(
+'Required Numeric Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'score' => 'abc',
+],
+[
+'score' => 'numeric',
+]
+);
+
+$validator->validate();
+
+$errors = $validator->errorsFor('score');
+
+test(
+'Numeric Error Message Test',
+isset($errors[0])
+&& $errors[0] ===
+'The score field must be a number.'
+);
