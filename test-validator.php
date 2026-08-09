@@ -515,3 +515,99 @@ isset($errors[0])
 && $errors[0] ===
 'The status field must be one of: active, inactive.'
 );
+
+/*                                                                         
+| -------------------------------------------------------------------------- |
+| Not In Rule Tests                                                          |
+| -------------------------------------------------------------------------- |
+*/                                                                         
+
+$validator = Validator::make(
+[
+'status' => 'active',
+],
+[
+'status' => 'not_in:banned,suspended',
+]
+);
+
+test(
+'Not In Pass Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'status' => 'pending',
+],
+[
+'status' => 'not_in:banned,suspended',
+]
+);
+
+test(
+'Not In Second Pass Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'status' => 'banned',
+],
+[
+'status' => 'not_in:banned,suspended',
+]
+);
+
+test(
+'Not In Fail Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'status' => 'suspended',
+],
+[
+'status' => 'not_in:banned,suspended',
+]
+);
+
+test(
+'Not In Second Fail Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'status' => '',
+],
+[
+'status' => 'not_in:banned,suspended',
+]
+);
+
+test(
+'Empty Not In Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'status' => 'banned',
+],
+[
+'status' => 'not_in:banned,suspended',
+]
+);
+
+$validator->validate();
+
+$errors = $validator->errorsFor('status');
+
+test(
+'Not In Error Message Test',
+isset($errors[0])
+&& $errors[0] ===
+'The status field contains a prohibited value.'
+);

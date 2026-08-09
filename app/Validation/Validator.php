@@ -306,6 +306,39 @@ if (str_starts_with($rule, 'in:')) {
     return;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Not In
+|--------------------------------------------------------------------------
+|
+| Example:
+|
+| 'status' => 'not_in:banned,suspended'
+|
+*/
+
+if (str_starts_with($rule, 'not_in:')) {
+
+    $excluded = explode(
+        ',',
+        substr($rule, 7)
+    );
+
+    if (in_array(
+        (string) $value,
+        $excluded,
+        true
+    )) {
+        $this->addError(
+            $field,
+            'The ' . $field
+            . ' field contains a prohibited value.'
+        );
+    }
+
+    return;
+}
+
 }
 
 /*
