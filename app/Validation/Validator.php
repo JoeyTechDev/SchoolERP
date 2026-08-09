@@ -339,6 +339,41 @@ if (str_starts_with($rule, 'not_in:')) {
     return;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Same
+|--------------------------------------------------------------------------
+|
+| Example:
+|
+| 'password_confirmation' => 'same:password'
+|
+*/
+
+if (str_starts_with($rule, 'same:')) {
+
+    $otherField = substr(
+        $rule,
+        5
+    );
+
+    $otherValue = $this->data[
+        $otherField
+    ] ?? null;
+
+    if ($value !== $otherValue) {
+        $this->addError(
+            $field,
+            'The ' . $field
+            . ' field must match the '
+            . $otherField
+            . ' field.'
+        );
+    }
+
+    return;
+}
+
 }
 
 /*

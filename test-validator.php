@@ -611,3 +611,91 @@ isset($errors[0])
 && $errors[0] ===
 'The status field contains a prohibited value.'
 );
+
+/*                                                                         |
+| -------------------------------------------------------------------------- |
+| Same Rule Tests                                                            |
+| -------------------------------------------------------------------------- |
+*/                                                                         
+
+$validator = Validator::make(
+[
+'password' => 'secret123',
+'password_confirmation' => 'secret123',
+],
+[
+'password_confirmation' => 'same:password',
+]
+);
+
+test(
+'Same Match Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'password' => 'secret123',
+'password_confirmation' => 'different123',
+],
+[
+'password_confirmation' => 'same:password',
+]
+);
+
+test(
+'Same Mismatch Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'password' => 'secret123',
+],
+[
+'password_confirmation' => 'same:password',
+]
+);
+
+test(
+'Same Missing Field Test',
+$validator->validate() === false
+);
+
+$validator = Validator::make(
+[
+'password' => '',
+'password_confirmation' => '',
+],
+[
+'password_confirmation' => 'same:password',
+]
+);
+
+test(
+'Same Empty Match Test',
+$validator->validate()
+);
+
+$validator = Validator::make(
+[
+'password' => 'secret123',
+'password_confirmation' => 'different123',
+],
+[
+'password_confirmation' => 'same:password',
+]
+);
+
+$validator->validate();
+
+$errors = $validator->errorsFor(
+'password_confirmation'
+);
+
+test(
+'Same Error Message Test',
+isset($errors[0])
+&& $errors[0] ===
+'The password_confirmation field must match the password field.'
+);
