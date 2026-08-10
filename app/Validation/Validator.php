@@ -28,30 +28,56 @@ final class Validator
     private array $errors = [];
 
     /**
+     * Optional database existence checker.
+     *
+     * The callback must receive:
+     *
+     * - table name
+     * - column name
+     * - value
+     *
+     * and return true when a matching record exists.
+     *
+     * @var callable|null
+     */
+    private $uniqueChecker;
+
+    /**
      * Create a validator.
      *
      * @param array<string,mixed> $data
      * @param array<string,string|array<int,string>> $rules
+     * @param callable|null $uniqueChecker
      */
     public function __construct(
         array $data,
-        array $rules
+        array $rules,
+        ?callable $uniqueChecker = null
     ) {
         $this->data = $data;
         $this->rules = $rules;
+        $this->uniqueChecker = $uniqueChecker;
     }
 
     /**
      * Create a validator instance.
      *
+     * Existing two-argument usage remains fully supported.
+     *
      * @param array<string,mixed> $data
      * @param array<string,string|array<int,string>> $rules
+     * @param callable|null $uniqueChecker
      */
     public static function make(
         array $data,
-        array $rules
+        array $rules,
+        ?callable $uniqueChecker = null
     ): self {
-        return new self($data, $rules);
+        return new self(
+            $data,
+            $rules,
+            $uniqueChecker
+        );
     }
 
     /**
@@ -165,12 +191,10 @@ final class Validator
         */
 
         if (str_starts_with($rule, 'min:')) {
-            $parameter = substr(
+            $minimum = (int) substr(
                 $rule,
                 4
             );
-
-            $minimum = (int) $parameter;
 
             if (
                 is_string($value)
@@ -195,12 +219,10 @@ final class Validator
         */
 
         if (str_starts_with($rule, 'max:')) {
-            $parameter = substr(
+            $maximum = (int) substr(
                 $rule,
                 4
             );
-
-            $maximum = (int) $parameter;
 
             if (
                 is_string($value)
@@ -217,224 +239,262 @@ final class Validator
 
             return;
         }
-    
 
-/*
-|--------------------------------------------------------------------------
-| Confirmed
-|--------------------------------------------------------------------------
-|
-| Example:
-|
-| 'password' => 'required|min:8|confirmed'
-|
-| The validator expects:
-|
-| password
-| password_confirmation
-|
-*/
+        /*
+        |--------------------------------------------------------------------------
+        | Confirmed
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | 'password' => 'required|min:8|confirmed'
+        |
+        | Expects:
+        |
+        | password
+        | password_confirmation
+        |
+        */
 
-if ($rule === 'confirmed') {
-    $confirmationField = $field . '_confirmation';
+        if ($rule === 'confirmed') {
+            $confirmationField = $field . '_confirmation';
 
-    $confirmation = $this->data[
-        $confirmationField
-    ] ?? null;
+            $confirmation = $this->data[
+                $confirmationField
+            ] ?? null;
 
-    if ($value !== $confirmation) {
-        $this->addError(
-            $field,
-            'The ' . $field
-            . ' field confirmation does not match.'
-        );
+            if ($value !== $confirmation) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field confirmation does not match.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Numeric
+        |--------------------------------------------------------------------------
+        */
+
+        if ($rule === 'numeric') {
+            if (!is_numeric($value)) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field must be a number.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | In
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | 'status' => 'required|in:active,inactive'
+        |
+        */
+
+        if (str_starts_with($rule, 'in:')) {
+            $allowed = explode(
+                ',',
+                substr($rule, 3)
+            );
+
+            if (!in_array(
+                (string) $value,
+                $allowed,
+                true
+            )) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field must be one of: '
+                    . implode(', ', $allowed)
+                    . '.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Not In
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | 'status' => 'not_in:banned,suspended'
+        |
+        */
+
+        if (str_starts_with($rule, 'not_in:')) {
+            $excluded = explode(
+                ',',
+                substr($rule, 7)
+            );
+
+            if (in_array(
+                (string) $value,
+                $excluded,
+                true
+            )) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field contains a prohibited value.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Same
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | 'password_confirmation' => 'same:password'
+        |
+        */
+
+        if (str_starts_with($rule, 'same:')) {
+            $otherField = substr(
+                $rule,
+                5
+            );
+
+            if (!array_key_exists(
+                $otherField,
+                $this->data
+            )) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field must match the '
+                    . $otherField
+                    . ' field.'
+                );
+
+                return;
+            }
+
+            $otherValue = $this->data[
+                $otherField
+            ];
+
+            if ($value !== $otherValue) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field must match the '
+                    . $otherField
+                    . ' field.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unique
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | 'email' => 'required|email|unique:users,email'
+        |
+        | Format:
+        |
+        | unique:table,column
+        |
+        | The database lookup itself is supplied through the optional
+        | $uniqueChecker callback.
+        |
+        */
+
+        if (str_starts_with($rule, 'unique:')) {
+            $parameters = explode(
+                ',',
+                substr($rule, 7)
+            );
+
+            $table = trim(
+                $parameters[0] ?? ''
+            );
+
+            $column = trim(
+                $parameters[1] ?? $field
+            );
+
+            /*
+             * If no database checker has been supplied, do not attempt
+             * a database operation inside the Validator.
+             */
+            if (
+                $this->uniqueChecker === null
+                || $table === ''
+                || $column === ''
+            ) {
+                return;
+            }
+
+            $exists = ($this->uniqueChecker)(
+                $table,
+                $column,
+                $value
+            );
+
+            if ($exists === true) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' has already been taken.'
+                );
+            }
+
+            return;
+        }
     }
 
-    return;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Numeric
-|--------------------------------------------------------------------------
-*/
-
-if ($rule === 'numeric') {
-    if (!is_numeric($value)) {
-        $this->addError(
-            $field,
-            'The ' . $field
-            . ' field must be a number.'
-        );
+    /**
+     * Add a validation error.
+     */
+    private function addError(
+        string $field,
+        string $message
+    ): void {
+        $this->errors[$field][] = $message;
     }
 
-    return;
-}
-
-/*
-|--------------------------------------------------------------------------
-| In
-|--------------------------------------------------------------------------
-|
-| Example:
-|
-| 'status' => 'required|in:active,inactive'
-|
-*/
-
-if (str_starts_with($rule, 'in:')) {
-
-    $allowed = explode(
-        ',',
-        substr($rule, 3)
-    );
-
-    if (!in_array(
-        (string) $value,
-        $allowed,
-        true
-    )) {
-        $this->addError(
-            $field,
-            'The ' . $field
-            . ' field must be one of: '
-            . implode(', ', $allowed)
-            . '.'
-        );
+    /**
+     * Determine whether validation passed.
+     */
+    public function passes(): bool
+    {
+        return $this->errors === [];
     }
 
-    return;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Not In
-|--------------------------------------------------------------------------
-|
-| Example:
-|
-| 'status' => 'not_in:banned,suspended'
-|
-*/
-
-if (str_starts_with($rule, 'not_in:')) {
-
-    $excluded = explode(
-        ',',
-        substr($rule, 7)
-    );
-
-    if (in_array(
-        (string) $value,
-        $excluded,
-        true
-    )) {
-        $this->addError(
-            $field,
-            'The ' . $field
-            . ' field contains a prohibited value.'
-        );
+    /**
+     * Determine whether validation failed.
+     */
+    public function fails(): bool
+    {
+        return !$this->passes();
     }
 
-    return;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Same
-|--------------------------------------------------------------------------
-|
-| Example:
-|
-| 'password_confirmation' => 'same:password'
-|
-| The field must match another field.
-|
-*/
-
-if (str_starts_with($rule, 'same:')) {
-
-    $otherField = substr(
-        $rule,
-        5
-    );
-
-    /*
-    |----------------------------------------------------------------------
-    | The comparison field must exist.
-    |----------------------------------------------------------------------
-    */
-
-    if (!array_key_exists(
-        $otherField,
-        $this->data
-    )) {
-
-        $this->addError(
-            $field,
-            'The ' . $field
-            . ' field must match the '
-            . $otherField
-            . ' field.'
-        );
-
-        return;
-    }
-
-    $otherValue = $this->data[
-        $otherField
-    ];
-
-    /*
-    |----------------------------------------------------------------------
-    | Compare values.
-    |----------------------------------------------------------------------
-    */
-
-    if ($value !== $otherValue) {
-
-        $this->addError(
-            $field,
-            'The ' . $field
-            . ' field must match the '
-            . $otherField
-            . ' field.'
-        );
-    }
-
-    return;
-}
-
-}
-
-/*
-*
-* Add a validation error.
-*/
-  private function addError(
-  string $field,
-  string $message
-  ): void {
-  $this->errors[$field][] = $message;
-  }
-
-/**
-
-* Determine whether validation passed.
-  */
-  public function passes(): bool
-  {
-  return $this->errors === [];
-  }
-
-/**
-
-* Determine whether validation failed.
-  */
-  public function fails(): bool
-  {
-  return !$this->passes();
-  }
     /**
      * Get all validation errors.
      *
@@ -486,3 +546,4 @@ if (str_starts_with($rule, 'same:')) {
         return $this->data;
     }
 }
+

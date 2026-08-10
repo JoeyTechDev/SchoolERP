@@ -6,12 +6,11 @@ namespace SchoolERP\ORM\Concerns;
 
 use SchoolERP\Query\QueryBuilder;
 
-    /**
-     * Query methods for ORM models.
-     */
-    trait HasQueries
-    {
-
+/**
+ * Query methods for ORM models.
+ */
+trait HasQueries
+{
     /**
      * Ensure the Query Builder is initialized.
      */
@@ -27,8 +26,9 @@ use SchoolERP\Query\QueryBuilder;
      */
     public function all(): array
     {
+        $this->initializeQuery();
+
         return $this->query
-            ->table($this->table)
             ->select(['*'])
             ->get();
     }
@@ -36,138 +36,159 @@ use SchoolERP\Query\QueryBuilder;
     /**
      * Find a record by ID.
      *
-     * @return array<string,mixed>|null
+     * @return static|null
      */
     public function find(int $id): ?static
-{
-    $record = $this->query
-        ->table($this->table)
-        ->where('id', '=', $id)
-        ->first();
+    {
+        $record = $this->query
+            ->table($this->table)
+            ->where('id', '=', $id)
+            ->first();
 
-    if ($record === null) {
-        return null;
+        if ($record === null) {
+            return null;
+        }
+
+        return (new static())->fill($record);
     }
 
-    return (new static())->fill($record);
-}
+    /**
+     * Create a new record.
+     *
+     * @param array<string,mixed> $attributes
+     */
+    public function create(array $attributes): int
+    {
+        $attributes = $this->fillable($attributes);
 
-/**
- * Create a new record.
- *
- * @param array<string,mixed> $attributes
- */
-public function create(array $attributes): int
-{
-    $attributes = $this->fillable($attributes);
+        $attributes = $this->addCreationTimestamps(
+            $attributes
+        );
 
-    $attributes = $this->addCreationTimestamps(
-        $attributes
-    );
+        return $this->query
+            ->table($this->table)
+            ->insert($attributes);
+    }
 
-    return $this->query
-        ->table($this->table)
-        ->insert($attributes);
-}
+    /**
+     * Update records.
+     *
+     * @param array<string,mixed> $attributes
+     */
+    public function update(array $attributes): int
+    {
+        $this->initializeQuery();
 
-/**
- * Update records.
- *
- * @param array<string,mixed> $attributes
- */
-public function update(array $attributes): int
-{
-    $attributes = $this->filterFillable($attributes);
+        $attributes = $this->filterFillable($attributes);
 
-    return $this->query->update($attributes);
-}
- 
-/**
- * Save the current model.
- */
-public function save(): bool
-{
-    if (!$this->isDirty()) {
+        return $this->query->update($attributes);
+    }
+
+    /**
+     * Save the current model.
+     */
+    public function save(): bool
+    {
+        if (!$this->isDirty()) {
+            return true;
+        }
+
+        $this->touch();
+
+        $dirty = $this->getDirty();
+
+        $dirty = $this->filterFillable($dirty);
+
+        if ($dirty === []) {
+            return true;
+        }
+
+        if (!isset($this->attributes['id'])) {
+            throw new \RuntimeException(
+                'Cannot save a model without an ID.'
+            );
+        }
+
+        $id = $this->attributes['id'];
+
+        $this->query
+            ->table($this->table)
+            ->where('id', '=', $id)
+            ->update($dirty);
+
+        $this->fill($this->attributes);
+
         return true;
     }
-    
-    $this->touch();
-    $dirty = $this->getDirty();
-    $dirty = $this->filterFillable($dirty);
-    
-    $id = $this->attributes['id'];
 
-    $this->query
-        ->table($this->table)
-        ->where('id', '=', $id)
-        ->update($dirty);
+    /**
+     * Delete records.
+     */
+    public function delete(): bool
+    {
+        if (!isset($this->attributes['id'])) {
+            throw new \RuntimeException(
+                'Cannot delete a model without an ID.'
+            );
+        }
 
-    $this->fill($this->attributes);
+        $affected = $this->query
+            ->table($this->table)
+            ->where('id', '=', $this->attributes['id'])
+            ->delete();
 
-    return true;
-}
-
-/**
- * Delete records.
- */
-public function delete(): bool
-{
-    if (!isset($this->attributes['id'])) {
-        throw new \RuntimeException(
-            'Cannot delete a model without an ID.'
-        );
+        return $affected > 0;
     }
 
-    $affected = $this->query
-        ->table($this->table)
-        ->where('id', '=', $this->attributes['id'])
-        ->delete();
+    /**
+     * Determine whether records exist.
+     */
+    public function exists(): bool
+    {
+        $this->initializeQuery();
 
-    return $affected > 0;
-}
-
-/**
- * Determine whether records exist.
- */
-public function exists(): bool
-{
-    return $this->first() !== null;
-}
-
-/**
- * Get the first record or throw.
- *
- * @return array<string,mixed>
- */
-public function firstOrFail(): array
-{
-    $record = $this->first();
-
-    if ($record === null) {
-        throw new \RuntimeException(
-            'Record not found.'
-        );
+        return $this->first() !== null;
     }
 
-    return $record;
-}
+    /**
+     * Get the first record or throw.
+     *
+     * @return static
+     */
+    public function firstOrFail(): static
+    {
+        $record = $this->first();
 
-public function count(): int
-{
-    return $this->query->count();
-}
+        if ($record === null) {
+            throw new \RuntimeException(
+                'Record not found.'
+            );
+        }
 
-/**
- * Begin a new model query.
- */
-public function query(): QueryBuilder
-{
-    $this->initializeQuery();
+        return $record;
+    }
 
-    $this->applyGlobalScopes();
+    /**
+     * Count records.
+     */
+    public function count(): int
+    {
+        $this->initializeQuery();
 
-    return $this->query;
-}
+        return $this->query->count();
+    }
+
+    /**
+     * Begin a new model query.
+     */
+    public function query(): QueryBuilder
+    {
+        $this->initializeQuery();
+
+        $this->applyGlobalScopes();
+
+        return $this->query;
+    }
 
     /**
      * Add a WHERE clause.
@@ -177,6 +198,27 @@ public function query(): QueryBuilder
         string $operator,
         mixed $value
     ): static {
+        /*
+         * IMPORTANT:
+         *
+         * Initialize the model table before adding
+         * the WHERE clause.
+         *
+         * Without this, a query such as:
+         *
+         * (new Student())
+         *     ->where('id', '=', 1)
+         *     ->first();
+         *
+         * would generate:
+         *
+         * SELECT * FROM WHERE id = ? LIMIT 1
+         *
+         * instead of:
+         *
+         * SELECT * FROM students WHERE id = ? LIMIT 1
+         */
+        $this->initializeQuery();
 
         $this->query->where(
             $column,
@@ -194,76 +236,89 @@ public function query(): QueryBuilder
      */
     public function get(): array
     {
+        $this->initializeQuery();
+
         return $this->query->get();
     }
 
-/**
- * Get the first matching record.
- */
-public function first(): ?static
-{
-    $record = $this->query->first();
+    /**
+     * Get the first matching record.
+     *
+     * @return static|null
+     */
+    public function first(): ?static
+    {
+        $this->initializeQuery();
 
-    if ($record === null) {
-        return null;
-    }
+        $record = $this->query->first();
 
-    $model = (new static())->fill($record);
-
-    foreach ($this->query->getEagerLoads() as $relation) {
-
-        if (!method_exists($model, $relation)) {
-            continue;
+        if ($record === null) {
+            return null;
         }
 
-        $model->setRelation(
-            $relation,
-            $model->{$relation}()->get()
-        );
+        $model = (new static())->fill($record);
+
+        foreach (
+            $this->query->getEagerLoads()
+            as $relation
+        ) {
+            if (!method_exists($model, $relation)) {
+                continue;
+            }
+
+            $model->setRelation(
+                $relation,
+                $model->{$relation}()->get()
+            );
+        }
+
+        return $model;
     }
 
-    return $model;
-}
-
-/**
- * Forward unknown methods to the Query Builder.
- */
-public function __call(
-    string $method,
-    array $arguments
-): mixed {
-
-    $this->initializeQuery();
-
-    /*
-     * Local Scope
+    /**
+     * Forward unknown methods to the Query Builder.
      */
-    $scope = 'scope' . ucfirst($method);
+    public function __call(
+        string $method,
+        array $arguments
+    ): mixed {
+        $this->initializeQuery();
 
-    if (method_exists($this, $scope)) {
-        return $this->$scope(...$arguments);
+        /*
+         * Local Scope.
+         */
+        $scope = 'scope' . ucfirst($method);
+
+        if (method_exists($this, $scope)) {
+            return $this->$scope(...$arguments);
+        }
+
+        /*
+         * Forward to Query Builder.
+         */
+        if (!method_exists($this->query, $method)) {
+            throw new \BadMethodCallException(
+                sprintf(
+                    'Method %s::%s does not exist.',
+                    static::class,
+                    $method
+                )
+            );
+        }
+
+        $result = $this->query->$method(...$arguments);
+
+        /*
+         * Continue the model chain when QueryBuilder
+         * returns itself.
+         */
+        if (
+            $result instanceof \SchoolERP\Query\QueryBuilder
+        ) {
+            return $this;
+        }
+
+        return $result;
     }
-
-    /*
-     * Forward to Query Builder
-     */
-    if (!method_exists($this->query, $method)) {
-        throw new \BadMethodCallException(
-            sprintf(
-                'Method %s::%s does not exist.',
-                static::class,
-                $method
-            )
-        );
-    }
-
-    $result = $this->query->$method(...$arguments);
-
-    if ($result instanceof \SchoolERP\Query\QueryBuilder) {
-        return $this;
-    }
-
-    return $result;
 }
 
-}

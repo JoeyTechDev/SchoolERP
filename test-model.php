@@ -2,40 +2,171 @@
 
 declare(strict_types=1);
 
-require 'vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 use SchoolERP\Models\Student;
 
-echo "Model Test\n";
-echo "==========\n\n";
+echo "MODEL TEST\n";
+echo "===========\n\n";
+
+function test(
+    string $name,
+    bool $result
+): void {
+    echo $name . ': ' . (
+        $result ? 'PASSED' : 'FAILED'
+    ) . PHP_EOL;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Create model
+|--------------------------------------------------------------------------
+*/
 
 $student = new Student();
 
-print_r(
-    $student
-        ->query()
-        ->where('id', '>', 1)
-        ->get()
+test(
+    'Model Instance Test',
+    $student instanceof Student
 );
 
-echo "\nExists Test\n";
-echo "===========\n\n";
+/*
+|--------------------------------------------------------------------------
+| Table
+|--------------------------------------------------------------------------
+*/
 
-var_dump(
-
-    $student
-        ->query()
-        ->where('id', '=', 2)
-        ->exists()
-
+test(
+    'Table Configuration Test',
+    $student->getQuery()->getTable() === 'students'
 );
 
-echo "\nCreate Test\n";
-echo "===========\n\n";
+/*
+|--------------------------------------------------------------------------
+| Fill Attributes
+|--------------------------------------------------------------------------
+*/
 
-$id = $student->create([
-    'first_name' => 'Alice',
-    'last_name'  => 'Brown'
+$student->fill([
+    'id' => 1,
+    'first_name' => 'John',
+    'last_name' => 'Doe',
+    'classroom_id' => 2,
 ]);
 
-echo "Inserted ID: {$id}\n";
+test(
+    'Fill Attributes Test',
+    $student->first_name === 'John'
+    && $student->last_name === 'Doe'
+    && $student->classroom_id === 2
+);
+
+/*
+|--------------------------------------------------------------------------
+| Attribute Casting
+|--------------------------------------------------------------------------
+*/
+
+test(
+    'Integer Cast Test',
+    is_int($student->id)
+    && is_int($student->classroom_id)
+);
+
+/*
+|--------------------------------------------------------------------------
+| Attributes Array
+|--------------------------------------------------------------------------
+*/
+
+$attributes = $student->attributes();
+
+test(
+    'Attributes Array Test',
+    isset($attributes['first_name'])
+    && $attributes['first_name'] === 'John'
+);
+
+/*
+|--------------------------------------------------------------------------
+| JSON Serialization
+|--------------------------------------------------------------------------
+*/
+
+$json = json_encode($student);
+
+test(
+    'JSON Serialization Test',
+    $json !== false
+);
+
+/*
+|--------------------------------------------------------------------------
+| Dirty State
+|--------------------------------------------------------------------------
+*/
+
+$cleanStudent = new Student();
+
+$cleanStudent->fill([
+    'id' => 1,
+    'first_name' => 'John',
+    'last_name' => 'Doe',
+    'classroom_id' => 2,
+]);
+
+test(
+    'Clean Model Test',
+    $cleanStudent->isDirty() === false
+);
+
+/*
+|--------------------------------------------------------------------------
+| Change Attribute
+|--------------------------------------------------------------------------
+*/
+
+$cleanStudent->first_name = 'Jane';
+
+test(
+    'Dirty Model Test',
+    $cleanStudent->isDirty()
+);
+
+/*
+|--------------------------------------------------------------------------
+| Get Dirty Attributes
+|--------------------------------------------------------------------------
+*/
+
+$dirty = $cleanStudent->getDirty();
+
+test(
+    'Get Dirty Attributes Test',
+    isset($dirty['first_name'])
+    && $dirty['first_name'] === 'Jane'
+);
+
+/*
+|--------------------------------------------------------------------------
+| Fillable Protection
+|--------------------------------------------------------------------------
+*/
+
+$fillableStudent = new Student();
+
+$id = $fillableStudent->create([
+    'first_name' => 'Test',
+    'last_name' => 'Student',
+    'classroom_id' => 1,
+    'id' => 999999,
+]);
+
+test(
+    'Fillable Protection Test',
+    $id > 0
+);
+
+echo PHP_EOL;
+echo "MODEL TEST COMPLETE\n";

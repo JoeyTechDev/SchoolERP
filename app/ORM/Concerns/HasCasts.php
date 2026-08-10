@@ -50,18 +50,70 @@ trait HasCasts
             'string' => (string) $value,
 
             'array' => is_string($value)
-            ? json_decode($value, true)
-            : (array) $value,
+                ? (array) json_decode(
+                    $value,
+                    true
+                )
+                : (array) $value,
 
-            'date' => $value === null
-            ? null
-            : new \DateTimeImmutable($value),
+            'date' => $this->castDate($value),
 
-            'datetime' => $value === null
-            ? null
-            : new \DateTimeImmutable($value),
+            'datetime' => $this->castDateTime($value),
 
             default => $value,
         };
     }
+
+    /**
+     * Cast a value to DateTimeImmutable.
+     */
+    protected function castDate(
+        mixed $value
+    ): ?\DateTimeImmutable {
+
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeImmutable) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface(
+                $value
+            );
+        }
+
+        return new \DateTimeImmutable(
+            (string) $value
+        );
+    }
+
+    /**
+     * Cast a value to DateTimeImmutable.
+     */
+    protected function castDateTime(
+        mixed $value
+    ): ?\DateTimeImmutable {
+
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeImmutable) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface(
+                $value
+            );
+        }
+
+        return new \DateTimeImmutable(
+            (string) $value
+        );
+    }
 }
+

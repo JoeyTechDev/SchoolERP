@@ -699,3 +699,173 @@ isset($errors[0])
 && $errors[0] ===
 'The password_confirmation field must match the password field.'
 );
+
+/*
+|--------------------------------------------------------------------------
+| Unique
+|--------------------------------------------------------------------------
+|
+| The unique rule checks whether a value already exists
+| in the specified table and column.
+|
+| Example:
+|
+| 'email' => 'required|email|unique:users,email'
+|
+*/
+
+/*
+|--------------------------------------------------------------------------
+| Unique Available
+|--------------------------------------------------------------------------
+*/
+
+$validator = Validator::make(
+    [
+        'email' => 'new@example.com',
+    ],
+    [
+        'email' => 'unique:users,email',
+    ],
+    function (
+        string $table,
+        string $column,
+        mixed $value
+    ): bool {
+        return false;
+    }
+);
+
+test(
+    'Unique Available Test',
+    $validator->validate()
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Unique Taken
+|--------------------------------------------------------------------------
+*/
+
+$validator = Validator::make(
+    [
+        'email' => 'existing@example.com',
+    ],
+    [
+        'email' => 'unique:users,email',
+    ],
+    function (
+        string $table,
+        string $column,
+        mixed $value
+    ): bool {
+        return true;
+    }
+);
+
+test(
+    'Unique Taken Test',
+    $validator->validate() === false
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Unique Empty Optional
+|--------------------------------------------------------------------------
+*/
+
+$validator = Validator::make(
+    [
+        'email' => '',
+    ],
+    [
+        'email' => 'unique:users,email',
+    ],
+    function (
+        string $table,
+        string $column,
+        mixed $value
+    ): bool {
+        return true;
+    }
+);
+
+test(
+    'Unique Empty Test',
+    $validator->validate()
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Unique Error Message
+|--------------------------------------------------------------------------
+*/
+
+$validator = Validator::make(
+    [
+        'email' => 'existing@example.com',
+    ],
+    [
+        'email' => 'unique:users,email',
+    ],
+    function (
+        string $table,
+        string $column,
+        mixed $value
+    ): bool {
+        return true;
+    }
+);
+
+$validator->validate();
+
+$errors = $validator->errorsFor('email');
+
+test(
+    'Unique Error Message Test',
+    isset($errors[0])
+    && $errors[0] ===
+        'The email has already been taken.'
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Unique Callback Parameters
+|--------------------------------------------------------------------------
+*/
+
+$callbackCalled = false;
+
+$validator = Validator::make(
+    [
+        'email' => 'john@example.com',
+    ],
+    [
+        'email' => 'unique:users,email',
+    ],
+    function (
+        string $table,
+        string $column,
+        mixed $value
+    ) use (&$callbackCalled): bool {
+
+        $callbackCalled =
+            $table === 'users'
+            && $column === 'email'
+            && $value === 'john@example.com';
+
+        return false;
+    }
+);
+
+$validator->validate();
+
+test(
+    'Unique Callback Parameters Test',
+    $callbackCalled
+);
+
