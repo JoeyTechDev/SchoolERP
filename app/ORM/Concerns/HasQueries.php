@@ -241,6 +241,26 @@ trait HasQueries
         return $this->query->get();
     }
 
+/**
+ * Get matching records as model instances.
+ *
+ * @return array<int,static>
+ */
+public function getModels(): array
+{
+    $this->initializeQuery();
+
+    $records = $this->query->get();
+
+    $models = [];
+
+    foreach ($records as $record) {
+        $models[] = (new static())->fill($record);
+    }
+
+    return $models;
+}
+
     /**
      * Get the first matching record.
      *

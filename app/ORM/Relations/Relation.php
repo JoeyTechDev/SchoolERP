@@ -8,7 +8,13 @@ use SchoolERP\ORM\Model;
 use SchoolERP\Query\QueryBuilder;
 
 /**
- * Base relationship class.
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Base Relationship
+ * --------------------------------------------------------------------------
+ *
+ * Parent class for ORM relationships.
  */
 abstract class Relation
 {
@@ -27,14 +33,15 @@ abstract class Relation
      */
     protected QueryBuilder $query;
 
+    /**
+     * Create a relationship.
+     */
     public function __construct(
         Model $parent,
         Model $related
     ) {
         $this->parent = $parent;
-
         $this->related = $related;
-
         $this->query = $related->getQuery();
     }
 
