@@ -12,46 +12,39 @@ namespace SchoolERP\Http;
  * --------------------------------------------------------------------------
  *
  * Represents an outgoing HTTP response.
- *
- * Responsibilities
- * ----------------
- * • Set HTTP status codes
- * • Send headers
- * • Output content
- * • Return JSON responses
- * • Handle redirects
- *
- * Design Principles
- * -----------------
- * • Zero framework dependencies
- * • Immutable-style API
- * • Strict typing
- * • PSR-12 compliant
  */
-final class Response
+class Response
 {
     /**
      * HTTP status code.
      */
-    private int $status = 200;
+    private int $status;
 
     /**
      * Response headers.
      *
      * @var array<string,string>
      */
-    private array $headers = [];
+    private array $headers;
 
     /**
      * Response body.
      */
-    private string $content = '';
+    private string $content;
 
     /**
-     * Private constructor.
+     * Create a response.
+     *
+     * @param array<string,string> $headers
      */
-    private function __construct()
-    {
+    protected function __construct(
+        string $content = '',
+        int $status = 200,
+        array $headers = []
+    ) {
+        $this->content = $content;
+        $this->status = $status;
+        $this->headers = $headers;
     }
 
     /**
@@ -62,12 +55,10 @@ final class Response
         int $status = 200
     ): self {
 
-        $response = new self();
-
-        $response->content = $content;
-        $response->status = $status;
-
-        return $response;
+        return new self(
+            $content,
+            $status
+        );
     }
 
     /**
@@ -102,78 +93,80 @@ final class Response
 
         return $this;
     }
-    
-/**
- * Get the response content.
- */
-public function getContent(): string
-{
-    return $this->content;
-}
 
-/**
- * Get the response status.
- */
-public function getStatus(): int
-{
-    return $this->status;
-}
+    /**
+     * Get the response content.
+     */
+    public function getContent(): string
+    {
+        return $this->content;
+    }
 
-/**
- * Get response headers.
- *
- * @return array<string,string>
- */
-public function getHeaders(): array
-{
-    return $this->headers;
-}
- 
-/**
- * Return a JSON response.
- */
-public static function json(
-    array $data,
-    int $status = 200
-): self {
+    /**
+     * Get the response status.
+     */
+    public function getStatus(): int
+    {
+        return $this->status;
+    }
 
-    return self::make(
-        json_encode(
-            $data,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
-        ) ?: '{}',
-        $status
-    )->header(
-        'Content-Type',
-        'application/json'
-    );
-}
+    /**
+     * Get response headers.
+     *
+     * @return array<string,string>
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
 
-/**
- * Redirect to another URL.
- */
-public static function redirect(
-    string $url,
-    int $status = 302
-): self {
+    /**
+     * Return a JSON response.
+     */
+    public static function json(
+        array $data,
+        int $status = 200
+    ): self {
 
-    return self::make('', $status)
-        ->header(
-            'Location',
-            $url
+        return self::make(
+            json_encode(
+                $data,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+            ) ?: '{}',
+            $status
+        )->header(
+            'Content-Type',
+            'application/json'
         );
-}
+    }
 
-/**
- * Create a 404 response.
- */
-public static function notFound(): self
-{
-    return self::make(
-        '404 Not Found',
-        404
-    );
-}
+    /**
+     * Redirect to another URL.
+     */
+    public static function redirect(
+        string $url,
+        int $status = 302
+    ): self {
+
+        return new self(
+            '',
+            $status,
+            [
+                'Location' => $url,
+            ]
+        );
+    }
+
+    /**
+     * Create a 404 response.
+     */
+    public static function notFound(): self
+    {
+        return self::make(
+            '404 Not Found',
+            404
+        );
+    }
 
     /**
      * Send the response to the client.
@@ -182,14 +175,20 @@ public static function notFound(): self
     {
         if (!headers_sent()) {
 
-        http_response_code($this->status);
+            http_response_code(
+                $this->status
+            );
 
-        foreach ($this->headers as $name => $value) {
-            header($name . ': ' . $value);
+            foreach (
+                $this->headers
+                as $name => $value
+            ) {
+                header(
+                    $name . ': ' . $value
+                );
+            }
         }
-    }
 
         echo $this->content;
     }
-    
 }
