@@ -7,13 +7,11 @@ use SchoolERP\Exceptions\ErrorHandler;
 use SchoolERP\Http\Kernel;
 use SchoolERP\Http\Request;
 use SchoolERP\Middleware\MaintenanceMiddleware;
-use SchoolERP\Middleware\SessionMiddleware;
 use SchoolERP\Routing\Router;
+use SchoolERP\Security\Csrf;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Session\SessionManager;
 use SchoolERP\View\ViewFactory;
-use SchoolERP\Security\Csrf;
-use SchoolERP\Middleware\VerifyCsrfMiddleware;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/Support/helpers.php';
@@ -41,6 +39,7 @@ $request = Request::capture();
 */
 
 $container = new Container();
+
 $GLOBALS['container'] = $container;
 
 $container->instance(
@@ -67,11 +66,14 @@ $container->singleton(
         );
     }
 );
+
 $container->singleton(
     Csrf::class,
     function (Container $container) {
         return new Csrf(
-            $container->make(SessionInterface::class)
+            $container->make(
+                SessionInterface::class
+            )
         );
     }
 );
@@ -94,7 +96,7 @@ require __DIR__ . '/../routes/web.php';
 
 /*
 |--------------------------------------------------------------------------
-| Create Kernel
+| Create HTTP Kernel
 |--------------------------------------------------------------------------
 */
 
@@ -110,8 +112,6 @@ $kernel = new Kernel(
 */
 
 $kernel->middleware([
-    SessionMiddleware::class,
-    VerifyCsrfMiddleware::class,
     MaintenanceMiddleware::class,
 ]);
 

@@ -173,10 +173,7 @@ private function resolveMethodDependencies(
 
     $routeIndex = 0;
 
-    foreach (
-        $reflection->getParameters()
-        as $parameter
-    ) {
+    foreach ($reflection->getParameters() as $parameter) {
 
         $type = $parameter->getType();
 
@@ -196,28 +193,14 @@ private function resolveMethodDependencies(
 
         /*
         |--------------------------------------------------------------------------
-        | Built-in type
+        | Request dependency
         |--------------------------------------------------------------------------
         */
 
-        if ($type->isBuiltin()) {
-
-            $arguments[] =
-                $routeParameters[$routeIndex++] ?? null;
-
-            continue;
-        }
-
-        $class = $type->getName();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Current Request
-        |--------------------------------------------------------------------------
-        */
-
-        if ($class === Request::class) {
-
+        if (
+            !$type->isBuiltin()
+            && $type->getName() === Request::class
+        ) {
             $arguments[] = $request;
 
             continue;
@@ -225,9 +208,47 @@ private function resolveMethodDependencies(
 
         /*
         |--------------------------------------------------------------------------
-        | Resolve through Container
+        | Built-in route parameters
         |--------------------------------------------------------------------------
         */
+
+        if ($type->isBuiltin()) {
+
+            $value =
+                $routeParameters[$routeIndex++] ?? null;
+
+            /*
+            |----------------------------------------------------------------------
+            | Convert route parameter according to declared type
+            |----------------------------------------------------------------------
+            */
+
+            $arguments[] = match ($type->getName()) {
+
+                'int' => (int) $value,
+
+                'float' => (float) $value,
+
+                'bool' => filter_var(
+                    $value,
+                    FILTER_VALIDATE_BOOLEAN
+                ),
+
+                'string' => (string) $value,
+
+                default => $value,
+            };
+
+            continue;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Class dependency
+        |--------------------------------------------------------------------------
+        */
+
+        $class = $type->getName();
 
         $arguments[] = $this->container->make(
             $class

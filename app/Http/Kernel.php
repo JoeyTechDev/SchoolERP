@@ -42,7 +42,7 @@ final class Kernel
     private array $middleware = [];
 
     /**
-     * Constructor.
+     * Create the HTTP kernel.
      */
     public function __construct(
         Container $container,
@@ -51,11 +51,6 @@ final class Kernel
         $this->container = $container;
         $this->router = $router;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Resolve Pipeline from the Container
-        |--------------------------------------------------------------------------
-        */
         $this->pipeline = $container->make(
             Pipeline::class
         );
@@ -77,7 +72,6 @@ final class Kernel
     public function middleware(
         array $middleware
     ): self {
-
         $this->middleware = $middleware;
 
         return $this;
@@ -89,16 +83,12 @@ final class Kernel
     public function handle(
         Request $request
     ): Response {
-
         return $this->pipeline
             ->through($this->middleware)
             ->process(
-
                 $request,
-
                 fn (Request $request): Response
                     => $this->router->dispatch($request)
-
             );
     }
 }

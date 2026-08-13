@@ -62,4 +62,25 @@ final class StudentController extends Controller
             ]
         );
     }
+
+    /**
+     * Display a single student.
+     */
+    public function show(
+        int $id
+    ): Response {
+
+        $student = $this->students->find($id);
+
+        if ($student === null) {
+            return Response::notFound();
+        }
+
+        return $this->view(
+            'students.show',
+            [
+                'student' => $student,
+            ]
+        );
+    }
 }
