@@ -3,34 +3,65 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<title><?= $title ?? 'SchoolERP'; ?></title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<style>
+    <title>
+        <?= htmlspecialchars(
+            $title ?? 'SchoolERP',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
+    </title>
 
-body{
-    margin:40px;
-    font-family:Arial,sans-serif;
-}
+    <style>
 
-header{
+        * {
+            box-sizing: border-box;
+        }
 
-    background:#2563eb;
-    color:white;
-    padding:18px;
-    margin-bottom:25px;
-}
+        body {
+            margin: 0;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
 
-footer{
+        header {
+            background: #2563eb;
+            color: white;
+            padding: 18px 40px;
+        }
 
-    margin-top:40px;
-    border-top:1px solid #ddd;
-    padding-top:20px;
-    color:#777;
-}
+        header h2 {
+            margin: 0;
+        }
 
-</style>
+        main {
+            padding: 30px 40px;
+            min-height: 70vh;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px 40px;
+            border-top: 1px solid #ddd;
+            color: #777;
+            background: white;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+    </style>
 
 </head>
 
@@ -38,19 +69,19 @@ footer{
 
 <header>
 
-<h2>SchoolERP Framework</h2>
+    <h2>SchoolERP Framework</h2>
 
 </header>
 
 <main>
 
-<?= $content ?>
+    <?= $content ?>
 
 </main>
 
 <footer>
 
-SchoolERP Framework © <?= date('Y') ?>
+    SchoolERP Framework &copy; <?= date('Y') ?>
 
 </footer>
 
