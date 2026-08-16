@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace SchoolERP\Controllers;
 
-use SchoolERP\Http\Response;
 use SchoolERP\Http\RedirectResponse;
+use SchoolERP\Http\Response;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\View\ViewFactory;
 
@@ -50,7 +50,6 @@ abstract class Controller
         string $view,
         array $data = []
     ): Response {
-
         $html = $this->views
             ->layout('app')
             ->make($view, $data)
@@ -60,13 +59,14 @@ abstract class Controller
     }
 
     /**
-     * JSON response.
+     * Return a JSON response.
+     *
+     * @param array<string,mixed> $data
      */
     protected function json(
         array $data,
         int $status = 200
     ): Response {
-
         return Response::json(
             $data,
             $status
@@ -74,13 +74,12 @@ abstract class Controller
     }
 
     /**
-     * Redirect response.
+     * Redirect to a URL.
      */
     protected function redirect(
         string $url,
         int $status = 302
     ): RedirectResponse {
-
         return (new RedirectResponse(
             $url,
             $status
@@ -90,13 +89,12 @@ abstract class Controller
     }
 
     /**
-     * Plain response.
+     * Return a plain response.
      */
     protected function response(
         string $content,
         int $status = 200
     ): Response {
-
         return Response::make(
             $content,
             $status

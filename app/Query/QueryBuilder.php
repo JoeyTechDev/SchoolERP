@@ -218,42 +218,53 @@ public function getEagerLoads(): array
         return $this;
     } 
 
-        /**
-     * Paginate query results.
+/**
+ * Paginate query results.
+ */
+public function paginate(
+    int $perPage = 15,
+    int $page = 1
+): Paginator {
+    $perPage = max(1, $perPage);
+    $page = max(1, $page);
+
+    /*
+     * Count records using the current query conditions.
      */
-    public function paginate(
-        int $perPage = 15,
-        int $page = 1
-    ): Paginator
-    {
-        $page = max(1, $page);
-        $perPage = max(1, $perPage);
+    $total = $this->count();
 
-        /*
-         * Count total records BEFORE
-         * applying limit and offset.
-         */
-        $total = $this->count();
+    /*
+     * Calculate the total number of pages.
+     */
+    $lastPage = max(
+        1,
+        (int) ceil($total / $perPage)
+    );
 
-        /*
-         * Calculate offset.
-         */
-        $offset = ($page - 1) * $perPage;
+    /*
+     * Prevent requests for pages beyond the last page.
+     */
+    $page = min($page, $lastPage);
 
-        /*
-         * Retrieve current page records.
-         */
-        $items = $this
-            ->limit($perPage)
-            ->offset($offset)
-            ->get();
+    /*
+     * Calculate SQL offset.
+     */
+    $offset = ($page - 1) * $perPage;
 
-        return new Paginator(
-            $items,
-            $total,
-            $perPage,
-            $page
-        );
+    /*
+     * Retrieve only the records for this page.
+     */
+    $items = $this
+        ->limit($perPage)
+        ->offset($offset)
+        ->get();
+
+    return new Paginator(
+        $items,
+        $total,
+        $perPage,
+        $page
+    );
     }
 
     /**

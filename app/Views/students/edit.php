@@ -1,6 +1,26 @@
 <?php
 
 declare(strict_types=1);
+
+/**
+ * Existing student data.
+ */
+$studentId = (int) $student->id;
+
+$firstName = old(
+    'first_name',
+    $student->first_name ?? ''
+);
+
+$lastName = old(
+    'last_name',
+    $student->last_name ?? ''
+);
+
+$classroomId = old(
+    'classroom_id',
+    $student->classroom_id ?? ''
+);
 ?>
 
 <div class="container py-4">
@@ -9,19 +29,19 @@ declare(strict_types=1);
 
         <div>
             <h1 class="h3 mb-1">
-                Create Student
+                Edit Student
             </h1>
 
             <p class="text-muted mb-0">
-                Add a new student to the school system.
+                Update the student's information.
             </p>
         </div>
 
         <a
-            href="/SchoolERP/public/students"
+            href="/SchoolERP/public/students/<?= $studentId ?>"
             class="btn btn-secondary"
         >
-            Back to Students
+            Back to Student
         </a>
 
     </div>
@@ -67,7 +87,7 @@ declare(strict_types=1);
 
             <form
                 method="POST"
-                action="/SchoolERP/public/students"
+                action="/SchoolERP/public/students/<?= $studentId ?>/update"
             >
 
                 <?= csrf_field() ?>
@@ -85,21 +105,25 @@ declare(strict_types=1);
                         type="text"
                         id="first_name"
                         name="first_name"
-                        value="<?= old('first_name') ?>"
-                        class="form-control <?= has_error('first_name') ? 'is-invalid' : '' ?>"
+                        value="<?= htmlspecialchars(
+                            (string) $firstName,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>"
+                        class="form-control <?= has_error('first_name')
+                            ? 'is-invalid'
+                            : '' ?>"
                         required
                     >
 
                     <?php if (has_error('first_name')): ?>
 
                         <div class="invalid-feedback">
-
                             <?= htmlspecialchars(
                                 first_error('first_name'),
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>
-
                         </div>
 
                     <?php endif; ?>
@@ -119,21 +143,25 @@ declare(strict_types=1);
                         type="text"
                         id="last_name"
                         name="last_name"
-                        value="<?= old('last_name') ?>"
-                        class="form-control <?= has_error('last_name') ? 'is-invalid' : '' ?>"
+                        value="<?= htmlspecialchars(
+                            (string) $lastName,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>"
+                        class="form-control <?= has_error('last_name')
+                            ? 'is-invalid'
+                            : '' ?>"
                         required
                     >
 
                     <?php if (has_error('last_name')): ?>
 
                         <div class="invalid-feedback">
-
                             <?= htmlspecialchars(
                                 first_error('last_name'),
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>
-
                         </div>
 
                     <?php endif; ?>
@@ -153,8 +181,14 @@ declare(strict_types=1);
                         type="number"
                         id="classroom_id"
                         name="classroom_id"
-                        value="<?= old('classroom_id') ?>"
-                        class="form-control <?= has_error('classroom_id') ? 'is-invalid' : '' ?>"
+                        value="<?= htmlspecialchars(
+                            (string) $classroomId,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>"
+                        class="form-control <?= has_error('classroom_id')
+                            ? 'is-invalid'
+                            : '' ?>"
                         min="1"
                     >
 
@@ -165,13 +199,11 @@ declare(strict_types=1);
                     <?php if (has_error('classroom_id')): ?>
 
                         <div class="invalid-feedback">
-
                             <?= htmlspecialchars(
                                 first_error('classroom_id'),
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>
-
                         </div>
 
                     <?php endif; ?>
@@ -184,11 +216,11 @@ declare(strict_types=1);
                         type="submit"
                         class="btn btn-primary"
                     >
-                        Create Student
+                        Update Student
                     </button>
 
                     <a
-                        href="/SchoolERP/public/students"
+                        href="/SchoolERP/public/students/<?= $studentId ?>"
                         class="btn btn-outline-secondary"
                     >
                         Cancel

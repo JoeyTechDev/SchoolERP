@@ -4,6 +4,31 @@ declare(strict_types=1);
 
 namespace SchoolERP\Validation;
 
+/**
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Validator
+ * --------------------------------------------------------------------------
+ *
+ * Lightweight validation service.
+ *
+ * Supported rules:
+ *
+ * required
+ * nullable
+ * email
+ * min
+ * max
+ * numeric
+ * integer
+ * in
+ * not_in
+ * same
+ * confirmed
+ * unique
+ * exists
+ */
 final class Validator
 {
     /**
@@ -28,55 +53,54 @@ final class Validator
     private array $errors = [];
 
     /**
-     * Optional database existence checker.
-     *
-     * The callback must receive:
-     *
-     * - table name
-     * - column name
-     * - value
-     *
-     * and return true when a matching record exists.
+     * Database uniqueness checker.
      *
      * @var callable|null
      */
     private $uniqueChecker;
 
     /**
+     * Database existence checker.
+     *
+     * @var callable|null
+     */
+    private $existsChecker;
+
+    /**
      * Create a validator.
      *
      * @param array<string,mixed> $data
      * @param array<string,string|array<int,string>> $rules
-     * @param callable|null $uniqueChecker
      */
     public function __construct(
         array $data,
         array $rules,
-        ?callable $uniqueChecker = null
+        ?callable $uniqueChecker = null,
+        ?callable $existsChecker = null
     ) {
         $this->data = $data;
         $this->rules = $rules;
         $this->uniqueChecker = $uniqueChecker;
+        $this->existsChecker = $existsChecker;
     }
 
     /**
      * Create a validator instance.
      *
-     * Existing two-argument usage remains fully supported.
-     *
      * @param array<string,mixed> $data
      * @param array<string,string|array<int,string>> $rules
-     * @param callable|null $uniqueChecker
      */
     public static function make(
         array $data,
         array $rules,
-        ?callable $uniqueChecker = null
+        ?callable $uniqueChecker = null,
+        ?callable $existsChecker = null
     ): self {
         return new self(
             $data,
             $rules,
-            $uniqueChecker
+            $uniqueChecker,
+            $existsChecker
         );
     }
 
@@ -143,20 +167,27 @@ final class Validator
 
         /*
         |--------------------------------------------------------------------------
-        | Optional Empty Values
+        | Nullable
         |--------------------------------------------------------------------------
         |
-        | Rules other than "required" should not reject an empty optional field.
+        | Nullable itself does not generate an error.
         |
+        | It is handled here so an empty value can safely pass the remaining
+        | validation rules.
+        |--------------------------------------------------------------------------
         */
 
-        if (
-            $value === null
-            || (
-                is_string($value)
-                && trim($value) === ''
-            )
-        ) {
+        if ($rule === 'nullable') {
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Optional Empty Values
+        |--------------------------------------------------------------------------
+        */
+
+        if ($this->isEmpty($value)) {
             return;
         }
 
@@ -186,27 +217,55 @@ final class Validator
 
         /*
         |--------------------------------------------------------------------------
-        | Minimum Length
+        | Minimum
+        |--------------------------------------------------------------------------
+        |
+        | For numeric values:
+        |
+        |     min:1
+        |
+        | means the value must be >= 1.
+        |
+        | For strings:
+        |
+        |     min:2
+        |
+        | means the string must contain at least 2 characters.
         |--------------------------------------------------------------------------
         */
 
         if (str_starts_with($rule, 'min:')) {
-            $minimum = (int) substr(
+            $minimum = (float) substr(
                 $rule,
                 4
             );
 
-            if (
-                is_string($value)
-                && mb_strlen($value) < $minimum
-            ) {
-                $this->addError(
-                    $field,
-                    'The ' . $field
-                    . ' field must be at least '
-                    . $minimum
-                    . ' characters.'
-                );
+            if (is_numeric($value)) {
+                if ((float) $value < $minimum) {
+                    $this->addError(
+                        $field,
+                        'The ' . $field
+                        . ' field must be at least '
+                        . $this->formatNumber($minimum)
+                        . '.'
+                    );
+                }
+
+                return;
+            }
+
+            if (is_string($value)) {
+                $length = mb_strlen($value);
+
+                if ($length < $minimum) {
+                    $this->addError(
+                        $field,
+                        'The ' . $field
+                        . ' field must be at least '
+                        . (int) $minimum
+                        . ' characters.'
+                    );
+                }
             }
 
             return;
@@ -214,61 +273,42 @@ final class Validator
 
         /*
         |--------------------------------------------------------------------------
-        | Maximum Length
+        | Maximum
         |--------------------------------------------------------------------------
         */
 
         if (str_starts_with($rule, 'max:')) {
-            $maximum = (int) substr(
+            $maximum = (float) substr(
                 $rule,
                 4
             );
 
-            if (
-                is_string($value)
-                && mb_strlen($value) > $maximum
-            ) {
-                $this->addError(
-                    $field,
-                    'The ' . $field
-                    . ' field may not be greater than '
-                    . $maximum
-                    . ' characters.'
-                );
+            if (is_numeric($value)) {
+                if ((float) $value > $maximum) {
+                    $this->addError(
+                        $field,
+                        'The ' . $field
+                        . ' field may not be greater than '
+                        . $this->formatNumber($maximum)
+                        . '.'
+                    );
+                }
+
+                return;
             }
 
-            return;
-        }
+            if (is_string($value)) {
+                $length = mb_strlen($value);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Confirmed
-        |--------------------------------------------------------------------------
-        |
-        | Example:
-        |
-        | 'password' => 'required|min:8|confirmed'
-        |
-        | Expects:
-        |
-        | password
-        | password_confirmation
-        |
-        */
-
-        if ($rule === 'confirmed') {
-            $confirmationField = $field . '_confirmation';
-
-            $confirmation = $this->data[
-                $confirmationField
-            ] ?? null;
-
-            if ($value !== $confirmation) {
-                $this->addError(
-                    $field,
-                    'The ' . $field
-                    . ' field confirmation does not match.'
-                );
+                if ($length > $maximum) {
+                    $this->addError(
+                        $field,
+                        'The ' . $field
+                        . ' field may not be greater than '
+                        . (int) $maximum
+                        . ' characters.'
+                    );
+                }
             }
 
             return;
@@ -294,19 +334,42 @@ final class Validator
 
         /*
         |--------------------------------------------------------------------------
+        | Integer
+        |--------------------------------------------------------------------------
+        */
+
+        if ($rule === 'integer') {
+            if (
+                filter_var(
+                    $value,
+                    FILTER_VALIDATE_INT
+                ) === false
+            ) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field must be an integer.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | In
         |--------------------------------------------------------------------------
-        |
-        | Example:
-        |
-        | 'status' => 'required|in:active,inactive'
-        |
         */
 
         if (str_starts_with($rule, 'in:')) {
             $allowed = explode(
                 ',',
                 substr($rule, 3)
+            );
+
+            $allowed = array_map(
+                'trim',
+                $allowed
             );
 
             if (!in_array(
@@ -330,17 +393,17 @@ final class Validator
         |--------------------------------------------------------------------------
         | Not In
         |--------------------------------------------------------------------------
-        |
-        | Example:
-        |
-        | 'status' => 'not_in:banned,suspended'
-        |
         */
 
         if (str_starts_with($rule, 'not_in:')) {
             $excluded = explode(
                 ',',
                 substr($rule, 7)
+            );
+
+            $excluded = array_map(
+                'trim',
+                $excluded
             );
 
             if (in_array(
@@ -362,11 +425,6 @@ final class Validator
         |--------------------------------------------------------------------------
         | Same
         |--------------------------------------------------------------------------
-        |
-        | Example:
-        |
-        | 'password_confirmation' => 'same:password'
-        |
         */
 
         if (str_starts_with($rule, 'same:')) {
@@ -409,19 +467,37 @@ final class Validator
 
         /*
         |--------------------------------------------------------------------------
+        | Confirmed
+        |--------------------------------------------------------------------------
+        */
+
+        if ($rule === 'confirmed') {
+            $confirmationField =
+                $field . '_confirmation';
+
+            $confirmation = $this->data[
+                $confirmationField
+            ] ?? null;
+
+            if ($value !== $confirmation) {
+                $this->addError(
+                    $field,
+                    'The ' . $field
+                    . ' field confirmation does not match.'
+                );
+            }
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | Unique
         |--------------------------------------------------------------------------
         |
         | Example:
         |
-        | 'email' => 'required|email|unique:users,email'
-        |
-        | Format:
-        |
-        | unique:table,column
-        |
-        | The database lookup itself is supplied through the optional
-        | $uniqueChecker callback.
+        | unique:users,email
         |
         */
 
@@ -439,10 +515,6 @@ final class Validator
                 $parameters[1] ?? $field
             );
 
-            /*
-             * If no database checker has been supplied, do not attempt
-             * a database operation inside the Validator.
-             */
             if (
                 $this->uniqueChecker === null
                 || $table === ''
@@ -467,6 +539,86 @@ final class Validator
 
             return;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Exists
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | exists:classrooms,id
+        |
+        */
+
+        if (str_starts_with($rule, 'exists:')) {
+            $parameters = explode(
+                ',',
+                substr($rule, 7)
+            );
+
+            $table = trim(
+                $parameters[0] ?? ''
+            );
+
+            $column = trim(
+                $parameters[1] ?? $field
+            );
+
+            if (
+                $this->existsChecker === null
+                || $table === ''
+                || $column === ''
+            ) {
+                return;
+            }
+
+            $exists = ($this->existsChecker)(
+                $table,
+                $column,
+                $value
+            );
+
+            if ($exists !== true) {
+                $this->addError(
+                    $field,
+                    'The selected ' . $field
+                    . ' does not exist.'
+                );
+            }
+
+            return;
+        }
+    }
+
+    /**
+     * Determine whether a value is empty.
+     */
+    private function isEmpty(
+        mixed $value
+    ): bool {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+
+        return false;
+    }
+
+    /**
+     * Format a numeric value for an error message.
+     */
+    private function formatNumber(
+        float $value
+    ): string {
+        if (floor($value) === $value) {
+            return (string) (int) $value;
+        }
+
+        return (string) $value;
     }
 
     /**
@@ -546,4 +698,3 @@ final class Validator
         return $this->data;
     }
 }
-

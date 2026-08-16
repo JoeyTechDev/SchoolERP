@@ -10,6 +10,11 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    <meta
+        name="robots"
+        content="noindex,nofollow"
+    >
+
     <title>
         <?= htmlspecialchars(
             $title ?? 'SchoolERP',
@@ -18,47 +23,35 @@
         ) ?>
     </title>
 
+    <!-- Bootstrap 5 -->
+    <link
+        href="/SchoolERP/public/assets/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Application Styles -->
     <style>
 
-        * {
-            box-sizing: border-box;
-        }
-
         body {
-            margin: 0;
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-            background: #f8fafc;
-            color: #1e293b;
+            background-color: #f8fafc;
+            color: #212529;
         }
 
-        header {
-            background: #2563eb;
-            color: white;
-            padding: 18px 40px;
+        .app-header {
+            background: #0d6efd;
         }
 
-        header h2 {
-            margin: 0;
+        .app-header .navbar-brand {
+            font-weight: 700;
         }
 
-        main {
-            padding: 30px 40px;
-            min-height: 70vh;
+        .app-main {
+            min-height: calc(100vh - 130px);
         }
 
-        footer {
-            margin-top: 40px;
-            padding: 20px 40px;
-            border-top: 1px solid #ddd;
-            color: #777;
-            background: white;
-        }
-
-        a {
-            text-decoration: none;
+        .app-footer {
+            background: #ffffff;
+            border-top: 1px solid #dee2e6;
         }
 
     </style>
@@ -67,23 +60,91 @@
 
 <body>
 
-<header>
+    <!-- Navigation -->
+    <header class="app-header">
 
-    <h2>SchoolERP Framework</h2>
+        <nav class="navbar navbar-expand-lg navbar-dark">
 
-</header>
+            <div class="container-fluid px-4">
 
-<main>
+                <a
+                    class="navbar-brand"
+                    href="/SchoolERP/public/"
+                >
+                    SchoolERP
+                </a>
 
-    <?= $content ?>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#mainNavigation"
+                    aria-controls="mainNavigation"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-</main>
+                <div
+                    class="collapse navbar-collapse"
+                    id="mainNavigation"
+                >
 
-<footer>
+                    <ul class="navbar-nav ms-auto">
 
-    SchoolERP Framework &copy; <?= date('Y') ?>
+                        <li class="nav-item">
 
-</footer>
+                            <a
+                                class="nav-link"
+                                href="/SchoolERP/public/students"
+                            >
+                                Students
+                            </a>
+
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </nav>
+
+    </header>
+
+
+    <!-- Main Content -->
+    <main class="app-main">
+
+        <?= $content ?>
+
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="app-footer py-3 mt-4">
+
+        <div class="container-fluid px-4">
+
+            <div class="text-center text-muted small">
+
+                SchoolERP Framework
+                &copy;
+                <?= date('Y') ?>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+
+    <!-- Bootstrap JavaScript -->
+    <script
+        src="/SchoolERP/public/assets/js/bootstrap.bundle.min.js"
+    ></script>
 
 </body>
 

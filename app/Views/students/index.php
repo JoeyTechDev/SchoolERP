@@ -1,114 +1,432 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php
 
-<head>
+declare(strict_types=1);
 
-    <meta charset="UTF-8">
-    <title>Students</title>
+/**
+ * @var array<int,array<string,mixed>> $students
+ * @var \SchoolERP\Query\Pagination\Paginator $pagination
+ */
+?>
 
-    <style>
+<div class="container-fluid py-4">
 
-        body{
-            font-family: Arial, sans-serif;
-            margin: 40px;
-        }
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
+        <div>
+            <h1 class="h3 fw-bold mb-1">
+                Students
+            </h1>
 
-        th,
-        td{
-            padding:10px;
-            border:1px solid #ddd;
-        }
+            <p class="text-muted mb-0">
+                Manage students enrolled in the school.
+            </p>
+        </div>
 
-        th{
-            background:#f4f4f4;
-        }
+        <a
+            href="/SchoolERP/public/students/create"
+            class="btn btn-primary"
+        >
+            + Add Student
+        </a>
 
-        h1{
-            margin-bottom:25px;
-        }
+    </div>
 
-    </style>
 
-</head>
+    <!-- Student Directory Card -->
+    <div class="card border-0 shadow-sm">
 
-<body>
+        <!-- Card Header -->
+        <div class="card-header bg-white border-bottom py-3">
 
-<h1>Students</h1>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
 
-<table>
+                <div>
 
-<thead>
+                    <h2 class="h5 fw-semibold mb-1">
+                        Student Directory
+                    </h2>
 
-<tr>
-    <th>ID</th>
-    <th>First Name</th>
-    <th>Last Name</th>
-    <th>Classroom</th>
-</tr>
+                    <p class="text-muted small mb-0">
 
-</thead>
+                        <?= number_format($pagination->total()) ?>
 
-<tbody>
+                        student<?= $pagination->total() === 1 ? '' : 's' ?>
 
-<?php if (empty($students)): ?>
+                        registered
 
-<tr>
-    <td colspan="4" style="text-align:center;">
-        No students found.
-    </td>
-</tr>
+                    </p>
 
-<?php else: ?>
+                </div>
 
-<?php foreach ($students as $student): ?>
 
-<tr>
+                <div class="text-muted small">
 
-    <td><?= $student['id']; ?></td>
+                    Page
+                    <strong>
+                        <?= $pagination->currentPage() ?>
+                    </strong>
 
-    <td><?= htmlspecialchars($student['first_name']); ?></td>
+                    of
 
-    <td><?= htmlspecialchars($student['last_name']); ?></td>
+                    <strong>
+                        <?= $pagination->lastPage() ?>
+                    </strong>
 
-    <td><?= htmlspecialchars((string)($student['classroom_id'] ?? '-')); ?></td>
+                </div>
 
-</tr>
+            </div>
 
-<?php endforeach; ?>
+        </div>
 
-<?php endif; ?>
 
-</tbody>
+        <!-- Table -->
+        <div class="card-body p-0">
 
-</table>
+            <?php if (empty($students)): ?>
 
-<hr>
+                <div class="text-center py-5">
 
-<p>
+                    <div class="mb-3">
 
-Page
+                        <span class="fs-1">
+                            👨‍🎓
+                        </span>
 
-<strong><?= $pagination->currentPage(); ?></strong>
+                    </div>
 
-of
+                    <h5 class="fw-semibold">
+                        No students found
+                    </h5>
 
-<strong><?= $pagination->lastPage(); ?></strong>
+                    <p class="text-muted mb-3">
+                        There are currently no students registered.
+                    </p>
 
-</p>
+                    <a
+                        href="/SchoolERP/public/students/create"
+                        class="btn btn-primary"
+                    >
+                        Add First Student
+                    </a>
 
-<p>
+                </div>
 
-Total Students:
+            <?php else: ?>
 
-<strong><?= $pagination->total(); ?></strong>
+                <div class="table-responsive">
 
-</p>
+                    <table class="table table-hover align-middle mb-0">
 
-</body>
+                        <thead class="table-light">
 
-</html>
+                            <tr>
+
+                                <th
+                                    scope="col"
+                                    class="px-4"
+                                    style="width: 80px;"
+                                >
+                                    ID
+                                </th>
+
+                                <th scope="col">
+                                    First Name
+                                </th>
+
+                                <th scope="col">
+                                    Last Name
+                                </th>
+
+                                <th scope="col">
+                                    Classroom
+                                </th>
+
+                                <th
+                                    scope="col"
+                                    class="text-end px-4"
+                                    style="width: 180px;"
+                                >
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <?php foreach ($students as $student): ?>
+
+                                <tr>
+
+                                    <!-- ID -->
+                                    <td class="px-4">
+
+                                        <span class="text-muted">
+                                            #<?= (int) $student['id'] ?>
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- First Name -->
+                                    <td>
+
+                                        <span class="fw-semibold">
+
+                                            <?= htmlspecialchars(
+                                                (string) $student['first_name'],
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- Last Name -->
+                                    <td>
+
+                                        <?= htmlspecialchars(
+                                            (string) $student['last_name'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+
+                                    </td>
+
+
+                                    <!-- Classroom -->
+                                    <td>
+
+                                        <?php
+                                        $classroomId = $student['classroom_id'] ?? null;
+                                        ?>
+
+                                        <?php if ($classroomId !== null && $classroomId !== ''): ?>
+
+                                            <span class="badge text-bg-light border">
+
+                                                Classroom
+                                                <?= (int) $classroomId ?>
+
+                                            </span>
+
+                                        <?php else: ?>
+
+                                            <span class="text-muted">
+                                                Not assigned
+                                            </span>
+
+                                        <?php endif; ?>
+
+                                    </td>
+
+                                    <!-- Actions -->
+<td class="text-end px-4">
+
+    <div class="btn-group" role="group">
+
+        <a
+            href="/SchoolERP/public/students/<?= (int) $student['id'] ?>"
+            class="btn btn-sm btn-outline-primary"
+        >
+            View
+        </a>
+
+        <a
+            href="/SchoolERP/public/students/<?= (int) $student['id'] ?>/edit"
+            class="btn btn-sm btn-outline-secondary"
+        >
+            Edit
+        </a>
+
+        <form
+            method="POST"
+            action="/SchoolERP/public/students/<?= (int) $student['id'] ?>/delete"
+            class="d-inline"
+            onsubmit="return confirm('Are you sure you want to delete this student?');"
+        >
+            <?= csrf_field() ?>
+
+            <button
+                type="submit"
+                class="btn btn-sm btn-outline-danger"
+            >
+                Delete
+            </button>
+        </form>
+
+    </div>
+
+</td>
+                                    
+
+                                </tr>
+
+                            <?php endforeach; ?>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            <?php endif; ?>
+
+        </div>
+
+
+        <!-- Footer / Pagination -->
+        <?php if ($pagination->total() > 0): ?>
+
+            <div class="card-footer bg-white border-top">
+
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+
+                    <!-- Showing -->
+                    <div class="text-muted small">
+
+                        Showing
+
+                        <strong>
+                            <?= $pagination->firstItem() ?>
+                        </strong>
+
+                        to
+
+                        <strong>
+                            <?= $pagination->lastItem() ?>
+                        </strong>
+
+                        of
+
+                        <strong>
+                            <?= $pagination->total() ?>
+                        </strong>
+
+                        students
+
+                    </div>
+
+
+                    <!-- Pagination -->
+                    <?php if ($pagination->lastPage() > 1): ?>
+
+                        <nav aria-label="Student pagination">
+
+                            <ul class="pagination pagination-sm mb-0">
+
+                                <!-- Previous -->
+                                <li
+                                    class="page-item
+                                    <?= !$pagination->hasPreviousPage()
+                                        ? 'disabled'
+                                        : '' ?>"
+                                >
+
+                                    <?php if ($pagination->hasPreviousPage()): ?>
+
+                                        <a
+                                            class="page-link"
+                                            href="/SchoolERP/public/students?page=<?= $pagination->previousPage() ?>"
+                                            aria-label="Previous"
+                                        >
+                                            &laquo;
+                                        </a>
+
+                                    <?php else: ?>
+
+                                        <span class="page-link">
+                                            &laquo;
+                                        </span>
+
+                                    <?php endif; ?>
+
+                                </li>
+
+
+                                <!-- Page Numbers -->
+                                <?php for (
+                                    $page = 1;
+                                    $page <= $pagination->lastPage();
+                                    $page++
+                                ): ?>
+
+                                    <li
+                                        class="page-item
+                                        <?= $page === $pagination->currentPage()
+                                            ? 'active'
+                                            : '' ?>"
+                                    >
+
+                                        <?php if (
+                                            $page === $pagination->currentPage()
+                                        ): ?>
+
+                                            <span class="page-link">
+                                                <?= $page ?>
+                                            </span>
+
+                                        <?php else: ?>
+
+                                            <a
+                                                class="page-link"
+                                                href="/SchoolERP/public/students?page=<?= $page ?>"
+                                            >
+                                                <?= $page ?>
+                                            </a>
+
+                                        <?php endif; ?>
+
+                                    </li>
+
+                                <?php endfor; ?>
+
+
+                                <!-- Next -->
+                                <li
+                                    class="page-item
+                                    <?= !$pagination->hasMorePages()
+                                        ? 'disabled'
+                                        : '' ?>"
+                                >
+
+                                    <?php if ($pagination->hasMorePages()): ?>
+
+                                        <a
+                                            class="page-link"
+                                            href="/SchoolERP/public/students?page=<?= $pagination->nextPage() ?>"
+                                            aria-label="Next"
+                                        >
+                                            &raquo;
+                                        </a>
+
+                                    <?php else: ?>
+
+                                        <span class="page-link">
+                                            &raquo;
+                                        </span>
+
+                                    <?php endif; ?>
+
+                                </li>
+
+                            </ul>
+
+                        </nav>
+
+                    <?php endif; ?>
+
+                </div>
+
+            </div>
+
+        <?php endif; ?>
+
+    </div>
+
+</div>

@@ -5,7 +5,13 @@ declare(strict_types=1);
 namespace SchoolERP\Query\Pagination;
 
 /**
- * Pagination result object.
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Paginator
+ * --------------------------------------------------------------------------
+ *
+ * Represents a paginated query result.
  */
 final class Paginator
 {
@@ -18,10 +24,12 @@ final class Paginator
         private int $perPage,
         private int $currentPage
     ) {
+        $this->perPage = max(1, $this->perPage);
+        $this->currentPage = max(1, $this->currentPage);
     }
 
     /**
-     * Items on the current page.
+     * Get items on the current page.
      *
      * @return array<int,mixed>
      */
@@ -31,7 +39,7 @@ final class Paginator
     }
 
     /**
-     * Total records.
+     * Get total number of records.
      */
     public function total(): int
     {
@@ -39,7 +47,7 @@ final class Paginator
     }
 
     /**
-     * Records per page.
+     * Get records per page.
      */
     public function perPage(): int
     {
@@ -47,7 +55,7 @@ final class Paginator
     }
 
     /**
-     * Current page.
+     * Get current page number.
      */
     public function currentPage(): int
     {
@@ -55,20 +63,84 @@ final class Paginator
     }
 
     /**
-     * Total number of pages.
+     * Get total number of pages.
      */
     public function lastPage(): int
     {
+        if ($this->total === 0) {
+            return 1;
+        }
+
         return (int) ceil(
             $this->total / $this->perPage
         );
     }
 
     /**
-     * Is there another page?
+     * Determine whether a previous page exists.
+     */
+    public function hasPreviousPage(): bool
+    {
+        return $this->currentPage > 1;
+    }
+
+    /**
+     * Determine whether a next page exists.
      */
     public function hasMorePages(): bool
     {
         return $this->currentPage < $this->lastPage();
+    }
+
+    /**
+     * Get previous page number.
+     */
+    public function previousPage(): int
+    {
+        return max(
+            1,
+            $this->currentPage - 1
+        );
+    }
+
+    /**
+     * Get next page number.
+     */
+    public function nextPage(): int
+    {
+        return min(
+            $this->lastPage(),
+            $this->currentPage + 1
+        );
+    }
+
+    /**
+     * Get first item number displayed on this page.
+     */
+    public function firstItem(): int
+    {
+        if ($this->total === 0) {
+            return 0;
+        }
+
+        return (
+            ($this->currentPage - 1)
+            * $this->perPage
+        ) + 1;
+    }
+
+    /**
+     * Get last item number displayed on this page.
+     */
+    public function lastItem(): int
+    {
+        if ($this->total === 0) {
+            return 0;
+        }
+
+        return min(
+            $this->currentPage * $this->perPage,
+            $this->total
+        );
     }
 }

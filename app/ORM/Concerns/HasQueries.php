@@ -71,17 +71,37 @@ trait HasQueries
     }
 
     /**
-     * Update records.
+     * Update the current model.
+     *
+     * IMPORTANT:
+     * This method requires the model to have an ID.
+     * The generated UPDATE query is always restricted
+     * to that model's primary key.
      *
      * @param array<string,mixed> $attributes
      */
     public function update(array $attributes): int
     {
-        $this->initializeQuery();
+        if (!isset($this->attributes['id'])) {
+            throw new \RuntimeException(
+                'Cannot update a model without an ID.'
+            );
+        }
 
-        $attributes = $this->filterFillable($attributes);
+        $attributes = $this->filterFillable(
+            $attributes
+        );
 
-        return $this->query->update($attributes);
+        if ($attributes === []) {
+            return 0;
+        }
+
+        $id = (int) $this->attributes['id'];
+
+        return $this->query
+            ->table($this->table)
+            ->where('id', '=', $id)
+            ->update($attributes);
     }
 
     /**
@@ -134,7 +154,11 @@ trait HasQueries
 
         $affected = $this->query
             ->table($this->table)
-            ->where('id', '=', $this->attributes['id'])
+            ->where(
+                'id',
+                '=',
+                $this->attributes['id']
+            )
             ->delete();
 
         return $affected > 0;
@@ -198,26 +222,6 @@ trait HasQueries
         string $operator,
         mixed $value
     ): static {
-        /*
-         * IMPORTANT:
-         *
-         * Initialize the model table before adding
-         * the WHERE clause.
-         *
-         * Without this, a query such as:
-         *
-         * (new Student())
-         *     ->where('id', '=', 1)
-         *     ->first();
-         *
-         * would generate:
-         *
-         * SELECT * FROM WHERE id = ? LIMIT 1
-         *
-         * instead of:
-         *
-         * SELECT * FROM students WHERE id = ? LIMIT 1
-         */
         $this->initializeQuery();
 
         $this->query->where(
@@ -241,25 +245,25 @@ trait HasQueries
         return $this->query->get();
     }
 
-/**
- * Get matching records as model instances.
- *
- * @return array<int,static>
- */
-public function getModels(): array
-{
-    $this->initializeQuery();
+    /**
+     * Get matching records as model instances.
+     *
+     * @return array<int,static>
+     */
+    public function getModels(): array
+    {
+        $this->initializeQuery();
 
-    $records = $this->query->get();
+        $records = $this->query->get();
 
-    $models = [];
+        $models = [];
 
-    foreach ($records as $record) {
-        $models[] = (new static())->fill($record);
+        foreach ($records as $record) {
+            $models[] = (new static())->fill($record);
+        }
+
+        return $models;
     }
-
-    return $models;
-}
 
     /**
      * Get the first matching record.
@@ -333,7 +337,7 @@ public function getModels(): array
          * returns itself.
          */
         if (
-            $result instanceof \SchoolERP\Query\QueryBuilder
+            $result instanceof QueryBuilder
         ) {
             return $this;
         }
@@ -341,4 +345,3 @@ public function getModels(): array
         return $result;
     }
 }
-

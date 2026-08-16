@@ -8,6 +8,7 @@ use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
 use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Session\SessionInterface;
+use SchoolERP\Validation\Validator;
 use SchoolERP\View\ViewFactory;
 
 /**
@@ -40,30 +41,30 @@ final class StudentController extends Controller
         $this->students = $students;
     }
 
-    /**
-     * Display all students.
-     */
-    public function index(
-        Request $request
-    ): Response {
-        $page = max(
-            1,
-            (int) $request->get('page', 1)
-        );
+/**
+ * Display all students.
+ */
+public function index(
+    Request $request
+): Response {
+    $page = max(
+        1,
+        (int) $request->get('page', 1)
+    );
 
-        $pagination = $this->students->paginate(
-            $page,
-            10
-        );
+    $pagination = $this->students->paginate(
+        $page,
+        10
+    );
 
-        return $this->view(
-            'students.index',
-            [
-                'students' => $pagination->items(),
-                'pagination' => $pagination,
-            ]
-        );
-    }
+    return $this->view(
+        'students.index',
+        [
+            'students' => $pagination->items(),
+            'pagination' => $pagination,
+        ]
+    );
+}
 
     /**
      * Display a single student.
@@ -104,11 +105,56 @@ final class StudentController extends Controller
     public function store(
         Request $request
     ): Response {
-        $this->students->create([
-            'first_name' => $request->input('first_name'),
-            'last_name' => $request->input('last_name'),
-            'classroom_id' => $request->input('classroom_id'),
-        ]);
+        $classroomId = $request->input('classroom_id');
+
+        $data = [
+            'first_name' => trim(
+                (string) $request->input('first_name')
+            ),
+
+            'last_name' => trim(
+                (string) $request->input('last_name')
+            ),
+
+            'classroom_id' => $classroomId === null
+                || trim((string) $classroomId) === ''
+                ? null
+                : (string) $classroomId,
+        ];
+
+        $validator = Validator::make(
+            $data,
+            [
+                'first_name' => 'required|min:2|max:100',
+                'last_name' => 'required|min:2|max:100',
+                'classroom_id' => 'nullable|integer|min:1',
+            ]
+        );
+
+        if ($validator->fails()) {
+            $this->session->flash(
+                '_old_input',
+                $data
+            );
+
+            $this->session->flash(
+                '_errors',
+                $validator->errors()
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/students/create'
+            );
+        }
+
+        $this->students->create(
+            $data
+        );
+
+        $this->session->flash(
+            'success',
+            'Student created successfully.'
+        );
 
         return $this->redirect(
             '/SchoolERP/public/students'
@@ -149,13 +195,56 @@ final class StudentController extends Controller
             return Response::notFound();
         }
 
+        $classroomId = $request->input('classroom_id');
+
+        $data = [
+            'first_name' => trim(
+                (string) $request->input('first_name')
+            ),
+
+            'last_name' => trim(
+                (string) $request->input('last_name')
+            ),
+
+            'classroom_id' => $classroomId === null
+                || trim((string) $classroomId) === ''
+                ? null
+                : (string) $classroomId,
+        ];
+
+        $validator = Validator::make(
+            $data,
+            [
+                'first_name' => 'required|min:2|max:100',
+                'last_name' => 'required|min:2|max:100',
+                'classroom_id' => 'nullable|integer|min:1',
+            ]
+        );
+
+        if ($validator->fails()) {
+            $this->session->flash(
+                '_old_input',
+                $data
+            );
+
+            $this->session->flash(
+                '_errors',
+                $validator->errors()
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/students/' . $id . '/edit'
+            );
+        }
+
         $this->students->update(
             $id,
-            [
-                'first_name' => $request->input('first_name'),
-                'last_name' => $request->input('last_name'),
-                'classroom_id' => $request->input('classroom_id'),
-            ]
+            $data
+        );
+
+        $this->session->flash(
+            'success',
+            'Student updated successfully.'
         );
 
         return $this->redirect(
@@ -176,6 +265,11 @@ final class StudentController extends Controller
         }
 
         $this->students->delete($id);
+
+        $this->session->flash(
+            'success',
+            'Student deleted successfully.'
+        );
 
         return $this->redirect(
             '/SchoolERP/public/students'
