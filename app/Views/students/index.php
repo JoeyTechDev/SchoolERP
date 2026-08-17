@@ -60,20 +60,48 @@ declare(strict_types=1);
                 </div>
 
 
-                <div class="text-muted small">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
 
-                    Page
-                    <strong>
-                        <?= $pagination->currentPage() ?>
-                    </strong>
+    <form
+        method="GET"
+        action="/SchoolERP/public/students"
+        class="d-flex"
+    >
 
-                    of
+        <input
+            type="search"
+            name="q"
+            value="<?= htmlspecialchars(
+                $search ?? '',
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
+            class="form-control form-control-sm"
+            placeholder="Search students..."
+            aria-label="Search students"
+        >
 
-                    <strong>
-                        <?= $pagination->lastPage() ?>
-                    </strong>
+        <button
+            type="submit"
+            class="btn btn-sm btn-primary ms-2"
+        >
+            Search
+        </button>
 
-                </div>
+        <?php if (!empty($search)): ?>
+
+            <a
+                href="/SchoolERP/public/students"
+                class="btn btn-sm btn-outline-secondary ms-2"
+            >
+                Clear
+            </a>
+
+        <?php endif; ?>
+
+    </form>
+
+</div>
 
             </div>
 
@@ -332,7 +360,7 @@ declare(strict_types=1);
 
                                         <a
                                             class="page-link"
-                                            href="/SchoolERP/public/students?page=<?= $pagination->previousPage() ?>"
+                                            href="/SchoolERP/public/students?page=<?= $pagination->previousPage() ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
                                             aria-label="Previous"
                                         >
                                             &laquo;
@@ -375,7 +403,7 @@ declare(strict_types=1);
 
                                             <a
                                                 class="page-link"
-                                                href="/SchoolERP/public/students?page=<?= $page ?>"
+                                                href="/SchoolERP/public/students?page=<?= $page ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
                                             >
                                                 <?= $page ?>
                                             </a>
@@ -399,7 +427,7 @@ declare(strict_types=1);
 
                                         <a
                                             class="page-link"
-                                            href="/SchoolERP/public/students?page=<?= $pagination->nextPage() ?>"
+                                            href="/SchoolERP/public/students?page=<?= $pagination->nextPage() ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
                                             aria-label="Next"
                                         >
                                             &raquo;

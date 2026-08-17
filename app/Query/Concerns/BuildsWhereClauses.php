@@ -19,7 +19,6 @@ trait BuildsWhereClauses
         string $operator,
         mixed $value
     ): self {
-
         if (!empty($this->wheres)) {
             $this->wheres[] = 'AND';
         }
@@ -43,7 +42,6 @@ trait BuildsWhereClauses
         string $operator,
         mixed $value
     ): self {
-
         if (!empty($this->wheres)) {
             $this->wheres[] = 'OR';
         }
@@ -68,7 +66,6 @@ trait BuildsWhereClauses
         string $column,
         array $values
     ): self {
-
         if ($values === []) {
             throw new InvalidArgumentException(
                 'whereIn() requires at least one value.'
@@ -107,7 +104,6 @@ trait BuildsWhereClauses
         string $column,
         array $values
     ): self {
-
         if (count($values) !== 2) {
             throw new InvalidArgumentException(
                 'whereBetween requires exactly two values.'
@@ -136,7 +132,6 @@ trait BuildsWhereClauses
         string $column,
         string $pattern
     ): self {
-
         if (!empty($this->wheres)) {
             $this->wheres[] = 'AND';
         }
@@ -152,10 +147,32 @@ trait BuildsWhereClauses
     }
 
     /**
+     * Add an OR WHERE LIKE clause.
+     */
+    public function orWhereLike(
+        string $column,
+        string $pattern
+    ): self {
+        if (!empty($this->wheres)) {
+            $this->wheres[] = 'OR';
+        }
+
+        $this->wheres[] = sprintf(
+            '%s LIKE ?',
+            $column
+        );
+
+        $this->bindings[] = $pattern;
+
+        return $this;
+    }
+
+    /**
      * Add a WHERE NULL clause.
      */
-    public function whereNull(string $column): self
-    {
+    public function whereNull(
+        string $column
+    ): self {
         if (!empty($this->wheres)) {
             $this->wheres[] = 'AND';
         }
@@ -171,8 +188,9 @@ trait BuildsWhereClauses
     /**
      * Add a WHERE NOT NULL clause.
      */
-    public function whereNotNull(string $column): self
-    {
+    public function whereNotNull(
+        string $column
+    ): self {
         if (!empty($this->wheres)) {
             $this->wheres[] = 'AND';
         }

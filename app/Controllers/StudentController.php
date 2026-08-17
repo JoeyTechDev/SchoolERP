@@ -42,7 +42,7 @@ final class StudentController extends Controller
     }
 
 /**
- * Display all students.
+ * Display students.
  */
 public function index(
     Request $request
@@ -52,16 +52,29 @@ public function index(
         (int) $request->get('page', 1)
     );
 
-    $pagination = $this->students->paginate(
-        $page,
-        10
+    $search = trim(
+        (string) $request->get('q', '')
     );
+
+    if ($search !== '') {
+        $pagination = $this->students->searchPaginated(
+            $search,
+            $page,
+            10
+        );
+    } else {
+        $pagination = $this->students->paginate(
+            $page,
+            10
+        );
+    }
 
     return $this->view(
         'students.index',
         [
             'students' => $pagination->items(),
             'pagination' => $pagination,
+            'search' => $search,
         ]
     );
 }

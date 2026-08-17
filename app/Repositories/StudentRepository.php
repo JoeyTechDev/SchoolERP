@@ -37,7 +37,6 @@ final class StudentRepository extends Repository
         int $page = 1,
         int $perPage = 10
     ): Paginator {
-
         return $this->model
             ->query()
             ->paginate(
@@ -45,4 +44,32 @@ final class StudentRepository extends Repository
                 $page
             );
     }
+
+    /**
+     * Search students by first name or last name
+     * and return paginated results.
+     */
+    public function searchPaginated(
+        string $search,
+        int $page = 1,
+        int $perPage = 10
+    ): Paginator {
+        $search = trim($search);
+
+        $query = $this->model->query();
+
+        if ($search !== '') {
+            $pattern = '%' . $search . '%';
+
+            $query
+                ->whereLike('first_name', $pattern)
+                ->orWhere('last_name', 'LIKE', $pattern);
+        }
+
+        return $query->paginate(
+            $perPage,
+            $page
+        );
+    }
 }
+
