@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+
+$classroom = $student->classroom;
 ?>
 
 <div class="container py-4">
@@ -8,7 +10,6 @@ declare(strict_types=1);
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-
             <h1 class="h3 mb-1">
                 Student Details
             </h1>
@@ -16,7 +17,6 @@ declare(strict_types=1);
             <p class="text-muted mb-0">
                 View student information.
             </p>
-
         </div>
 
         <a
@@ -39,13 +39,11 @@ declare(strict_types=1);
                 </div>
 
                 <div class="col-md-8">
-
                     <?= htmlspecialchars(
                         (string) $student->id,
                         ENT_QUOTES,
                         'UTF-8'
                     ) ?>
-
                 </div>
 
             </div>
@@ -57,13 +55,11 @@ declare(strict_types=1);
                 </div>
 
                 <div class="col-md-8">
-
                     <?= htmlspecialchars(
                         (string) $student->first_name,
                         ENT_QUOTES,
                         'UTF-8'
                     ) ?>
-
                 </div>
 
             </div>
@@ -75,13 +71,11 @@ declare(strict_types=1);
                 </div>
 
                 <div class="col-md-8">
-
                     <?= htmlspecialchars(
                         (string) $student->last_name,
                         ENT_QUOTES,
                         'UTF-8'
                     ) ?>
-
                 </div>
 
             </div>
@@ -89,16 +83,26 @@ declare(strict_types=1);
             <div class="row mb-3">
 
                 <div class="col-md-4 fw-bold">
-                    Classroom ID
+                    Classroom
                 </div>
 
                 <div class="col-md-8">
 
-                    <?= htmlspecialchars(
-                        (string) $student->classroom_id,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>
+                    <?php if ($classroom !== null): ?>
+
+                        <?= htmlspecialchars(
+                            (string) $classroom->name,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>
+
+                    <?php else: ?>
+
+                        <span class="text-muted">
+                            Not assigned
+                        </span>
+
+                    <?php endif; ?>
 
                 </div>
 
@@ -113,7 +117,6 @@ declare(strict_types=1);
                     </div>
 
                     <div class="col-md-8">
-
                         <?= htmlspecialchars(
                             $student->created_at->format(
                                 'Y-m-d H:i:s'
@@ -121,7 +124,6 @@ declare(strict_types=1);
                             ENT_QUOTES,
                             'UTF-8'
                         ) ?>
-
                     </div>
 
                 </div>
@@ -137,7 +139,6 @@ declare(strict_types=1);
                     </div>
 
                     <div class="col-md-8">
-
                         <?= htmlspecialchars(
                             $student->updated_at->format(
                                 'Y-m-d H:i:s'
@@ -145,7 +146,6 @@ declare(strict_types=1);
                             ENT_QUOTES,
                             'UTF-8'
                         ) ?>
-
                     </div>
 
                 </div>
@@ -157,3 +157,4 @@ declare(strict_types=1);
     </div>
 
 </div>
+

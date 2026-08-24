@@ -228,30 +228,35 @@ declare(strict_types=1);
 
 
                                     <!-- Classroom -->
-                                    <td>
 
-                                        <?php
-                                        $classroomId = $student['classroom_id'] ?? null;
-                                        ?>
+<td>
 
-                                        <?php if ($classroomId !== null && $classroomId !== ''): ?>
+<?php
+$classroomName = $student['classroom_name'] ?? null;
+?>
 
-                                            <span class="badge text-bg-light border">
+<?php if ($classroomName !== null): ?>
 
-                                                Classroom
-                                                <?= (int) $classroomId ?>
+    <span class="badge text-bg-light border">
 
-                                            </span>
+        <?= htmlspecialchars(
+            (string) $classroomName,
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
 
-                                        <?php else: ?>
+    </span>
 
-                                            <span class="text-muted">
-                                                Not assigned
-                                            </span>
+<?php else: ?>
 
-                                        <?php endif; ?>
+    <span class="text-muted">
+        Not assigned
+    </span>
 
-                                    </td>
+<?php endif; ?>
+
+</td>
+
 
                                     <!-- Actions -->
 <td class="text-end px-4">

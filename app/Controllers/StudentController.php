@@ -6,10 +6,11 @@ namespace SchoolERP\Controllers;
 
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
-use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Validation\Validator;
 use SchoolERP\View\ViewFactory;
+use SchoolERP\Repositories\ClassroomRepository;
+use SchoolERP\Repositories\StudentRepository;
 
 /**
  * --------------------------------------------------------------------------
@@ -26,20 +27,27 @@ final class StudentController extends Controller
     private StudentRepository $students;
 
     /**
+     * Classroom repository.
+     */
+    private ClassroomRepository $classrooms;
+
+    /**
      * Constructor.
      */
     public function __construct(
-        ViewFactory $views,
-        SessionInterface $session,
-        StudentRepository $students
-    ) {
-        parent::__construct(
-            $views,
-            $session
-        );
+    ViewFactory $views,
+    SessionInterface $session,
+    StudentRepository $students,
+    ClassroomRepository $classrooms
+) {
+    parent::__construct(
+        $views,
+        $session
+    );
 
-        $this->students = $students;
-    }
+    $this->students = $students;
+    $this->classrooms = $classrooms;
+} 
 
 /**
  * Display students.
@@ -79,38 +87,49 @@ public function index(
     );
 }
 
-    /**
-     * Display a single student.
-     */
-    public function show(
-        int $id
-    ): Response {
-        $student = $this->students->find($id);
+/**
+ * Display a single student.
+ */
+public function show(
+    int $id
+): Response {
+    $student = $this->students->find($id);
 
-        if ($student === null) {
-            return Response::notFound();
-        }
-
-        return $this->view(
-            'students.show',
-            [
-                'student' => $student,
-            ]
-        );
+    if ($student === null) {
+        return Response::notFound();
     }
 
-    /**
-     * Show the create student form.
+    /*
+     * Load the classroom relationship.
      */
-    public function create(): Response
-    {
-        return $this->view(
-            'students.create',
-            [
-                'title' => 'Create Student',
-            ]
-        );
-    }
+    $student->setRelation(
+        'classroom',
+        $student->classroom()->get()
+    );
+
+    return $this->view(
+        'students.show',
+        [
+            'student' => $student,
+        ]
+    );
+}
+  
+/**
+ * Show the create student form.
+ */
+public function create(): Response
+{
+    $classrooms = $this->classrooms->allOrdered();
+
+    return $this->view(
+        'students.create',
+        [
+            'title' => 'Create Student',
+            'classrooms' => $classrooms,
+        ]
+    );
+}
 
     /**
      * Store a new student.
@@ -174,26 +193,29 @@ public function index(
         );
     }
 
-    /**
-     * Show the edit student form.
-     */
-    public function edit(
-        int $id
-    ): Response {
-        $student = $this->students->find($id);
+/**
+ * Show the edit student form.
+ */
+public function edit(
+    int $id
+): Response {
+    $student = $this->students->find($id);
 
-        if ($student === null) {
-            return Response::notFound();
-        }
-
-        return $this->view(
-            'students.edit',
-            [
-                'title' => 'Edit Student',
-                'student' => $student,
-            ]
-        );
+    if ($student === null) {
+        return Response::notFound();
     }
+
+    $classrooms = $this->classrooms->allOrdered();
+
+    return $this->view(
+        'students.edit',
+        [
+            'title' => 'Edit Student',
+            'student' => $student,
+            'classrooms' => $classrooms,
+        ]
+    );
+}
 
     /**
      * Update an existing student.

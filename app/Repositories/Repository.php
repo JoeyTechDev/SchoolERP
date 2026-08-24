@@ -71,7 +71,6 @@ abstract class Repository implements RepositoryInterface
         int $id,
         array $data
     ): bool {
-
         $model = $this->find($id);
 
         if ($model === null) {
@@ -89,7 +88,6 @@ abstract class Repository implements RepositoryInterface
     public function delete(
         int $id
     ): bool {
-
         $model = $this->find($id);
 
         if ($model === null) {

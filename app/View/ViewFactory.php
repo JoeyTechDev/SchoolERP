@@ -47,7 +47,6 @@ final class ViewFactory
         string $view,
         array $data = []
     ): View {
-
         return new View(
             $this->viewPath,
             $view,
@@ -62,7 +61,6 @@ final class ViewFactory
     public function layout(
         string $layout
     ): self {
-
         $this->layout->setLayout($layout);
 
         return $this;

@@ -7,7 +7,13 @@ namespace SchoolERP\ORM\Relations;
 use SchoolERP\ORM\Model;
 
 /**
- * Belongs To relationship.
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Belongs To Relationship
+ * --------------------------------------------------------------------------
+ *
+ * Represents a child model belonging to a parent model.
  */
 final class BelongsTo extends Relation
 {
@@ -35,12 +41,6 @@ final class BelongsTo extends Relation
 
         if ($foreignValue === null) {
             return null;
-        }
-
-        if ($this->ownerKey === 'id') {
-            return $this->related->find(
-                (int) $foreignValue
-            );
         }
 
         return $this->related

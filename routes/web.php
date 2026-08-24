@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -15,6 +16,48 @@ use SchoolERP\Http\Response;
 $router->get('/', function () {
     return 'Welcome to SchoolERP Framework!';
 });
+
+/*
+|--------------------------------------------------------------------------
+| Classroom Routes
+|--------------------------------------------------------------------------
+*/
+
+// Classroom list
+$router->get(
+    '/classrooms',
+    [ClassroomController::class, 'index']
+);
+
+// Create classroom form
+$router->get(
+    '/classrooms/create',
+    [ClassroomController::class, 'create']
+);
+
+// Store classroom
+$router->post(
+    '/classrooms',
+    [ClassroomController::class, 'store']
+);
+
+// Edit classroom form
+$router->get(
+    '/classrooms/{id}/edit',
+    [ClassroomController::class, 'edit']
+);
+
+// Update classroom
+$router->post(
+    '/classrooms/{id}/update',
+    [ClassroomController::class, 'update']
+);
+
+// Delete classroom
+$router->post(
+    '/classrooms/{id}/delete',
+    [ClassroomController::class, 'destroy']
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +105,48 @@ $router->post(
 $router->get(
     '/students/{id}',
     [StudentController::class, 'show']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Classroom Routes
+|--------------------------------------------------------------------------
+*/
+
+// Classroom list
+$router->get(
+    '/classrooms',
+    [ClassroomController::class, 'index']
+);
+
+// Create classroom form
+$router->get(
+    '/classrooms/create',
+    [ClassroomController::class, 'create']
+);
+
+// Store classroom
+$router->post(
+    '/classrooms',
+    [ClassroomController::class, 'store']
+);
+
+// Edit classroom form
+$router->get(
+    '/classrooms/{id}/edit',
+    [ClassroomController::class, 'edit']
+);
+
+// Update classroom
+$router->post(
+    '/classrooms/{id}/update',
+    [ClassroomController::class, 'update']
+);
+
+// Delete classroom
+$router->post(
+    '/classrooms/{id}/delete',
+    [ClassroomController::class, 'destroy']
 );
 
 /*

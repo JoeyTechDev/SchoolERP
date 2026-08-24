@@ -7,7 +7,13 @@ namespace SchoolERP\ORM\Relations;
 use SchoolERP\ORM\Model;
 
 /**
- * Has Many relationship.
+ * --------------------------------------------------------------------------
+ * SchoolERP Framework
+ * --------------------------------------------------------------------------
+ * Has Many Relationship
+ * --------------------------------------------------------------------------
+ *
+ * Represents a parent model having many related models.
  */
 final class HasMany extends Relation
 {

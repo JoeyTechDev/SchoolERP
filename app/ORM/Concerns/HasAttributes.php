@@ -83,6 +83,26 @@ trait HasAttributes
     return null;
     }
 
+/**
+ * Get a model attribute.
+ */
+public function getAttribute(string $key): mixed
+{
+    return $this->attributes[$key] ?? null;
+}
+
+/**
+ * Set a model attribute.
+ */
+public function setAttribute(
+    string $key,
+    mixed $value
+): static {
+    $this->attributes[$key] = $value;
+
+    return $this;
+}
+
     /**
      * Set an attribute.
      */

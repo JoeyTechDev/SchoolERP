@@ -37,12 +37,16 @@ final class StudentRepository extends Repository
         int $page = 1,
         int $perPage = 10
     ): Paginator {
-        return $this->model
+        $pagination = $this->model
             ->query()
             ->paginate(
                 $perPage,
                 $page
             );
+
+        return $this->attachClassroomNames(
+            $pagination
+        );
     }
 
     /**
@@ -66,10 +70,52 @@ final class StudentRepository extends Repository
                 ->orWhere('last_name', 'LIKE', $pattern);
         }
 
-        return $query->paginate(
+        $pagination = $query->paginate(
             $perPage,
             $page
         );
+
+        return $this->attachClassroomNames(
+            $pagination
+        );
+    }
+
+    /**
+     * Attach classroom names to paginated students.
+     */
+    private function attachClassroomNames(
+        Paginator $pagination
+    ): Paginator {
+        $items = $pagination->items();
+
+        foreach ($items as &$student) {
+            $classroomId = $student['classroom_id'] ?? null;
+
+            if ($classroomId === null) {
+                $student['classroom_name'] = null;
+                continue;
+            }
+
+            $model = $this->model->find(
+                (int) $student['id']
+            );
+
+            $classroom = $model !== null
+                ? $model->classroom()->get()
+                : null;
+
+            $student['classroom_name'] = $classroom !== null
+                ? $classroom->name
+                : null;
+        }
+
+        unset($student);
+
+        return new Paginator(
+            $items,
+            $pagination->total(),
+            $pagination->perPage(),
+            $pagination->currentPage()
+        );
     }
 }
-

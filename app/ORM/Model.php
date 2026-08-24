@@ -33,7 +33,6 @@ abstract class Model implements \JsonSerializable
     use HasQueries;
     use HasTimestamps;
     use HasRelationships;
-    
 
     /**
      * Database table.
@@ -59,13 +58,6 @@ abstract class Model implements \JsonSerializable
      * Query Builder instance.
      */
     protected QueryBuilder $query;
-
-    /**
-     * Loaded relationships.
-     *
-     * @var array<string,mixed>
-     */
-    protected array $relations = [];
 
     /**
      * Database instance.
@@ -94,51 +86,14 @@ abstract class Model implements \JsonSerializable
             $this->database
         );
     }
-    
-/**
- * Get the Query Builder.
- */
-public function getQuery(): QueryBuilder
-{
-    $this->query->table($this->table);
 
-    return $this->query;
-}
+    /**
+     * Get the Query Builder.
+     */
+    public function getQuery(): QueryBuilder
+    {
+        $this->query->table($this->table);
 
-/**
- * Store a loaded relationship.
- */
-public function setRelation(
-    string $name,
-    mixed $value
-): static {
-
-    $this->relations[$name] = $value;
-
-    return $this;
-}
-
-/**
- * Get loaded relationships.
- *
- * @return array<string,mixed>
- */
-public function getRelations(): array
-{
-    return $this->relations;
-}
-
-/**
- * Determine whether a relationship is loaded.
- */
-public function relationLoaded(
-    string $name
-): bool {
-
-    return array_key_exists(
-        $name,
-        $this->relations
-    );
-}
-
+        return $this->query;
+    }
 }
