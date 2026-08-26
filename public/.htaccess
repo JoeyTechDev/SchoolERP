@@ -1,10 +1,13 @@
-<IfModule mod_rewrite.c>
+RewriteEngine On
 
-    RewriteEngine On
+RewriteBase /SchoolERP/public/
 
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+# Do not rewrite existing files.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
 
-    RewriteRule ^ index.php [QSA,L]
+# Do not rewrite existing directories.
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
 
-</IfModule>
+# Send all other requests through the framework.
+RewriteRule ^ index.php [L]

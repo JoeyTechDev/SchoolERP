@@ -100,4 +100,48 @@ abstract class Controller
             $status
         );
     }
+
+    /**
+     * Determine whether the current user has one of the supplied roles.
+     *
+     * @param array<int,int> $roles
+     */
+    protected function hasAnyRole(
+        array $roles
+    ): bool {
+        if (!$this->session->has('user_id')) {
+            return false;
+        }
+
+        $roleId = (int) $this->session->get(
+            'role_id',
+            0
+        );
+
+        return in_array(
+            $roleId,
+            $roles,
+            true
+        );
+    }
+
+    /**
+     * Require one of the supplied roles.
+     *
+     * Returns a 403 response when authorization fails.
+     *
+     * @param array<int,int> $roles
+     */
+    protected function requireRole(
+        array $roles
+    ): ?Response {
+        if ($this->hasAnyRole($roles)) {
+            return null;
+        }
+
+        return Response::make(
+            '403 Forbidden - You do not have permission to access this page.',
+            403
+        );
+    }
 }

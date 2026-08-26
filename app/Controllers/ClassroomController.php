@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace SchoolERP\Controllers;
 
 use PDOException;
-use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
+use SchoolERP\Http\Request;
 use SchoolERP\Repositories\ClassroomRepository;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Validation\Validator;
@@ -49,6 +49,12 @@ final class ClassroomController extends Controller
      */
     public function index(): Response
     {
+        $forbidden = $this->requireRole([1]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
         $classrooms = $this->classrooms->allOrdered();
 
         return $this->view(
@@ -65,6 +71,12 @@ final class ClassroomController extends Controller
      */
     public function create(): Response
     {
+        $forbidden = $this->requireRole([1]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
         return $this->view(
             'classrooms.create',
             [
@@ -79,6 +91,12 @@ final class ClassroomController extends Controller
     public function store(
         Request $request
     ): Response {
+        $forbidden = $this->requireRole([1]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
         $name = trim(
             (string) $request->input('name')
         );
@@ -111,7 +129,9 @@ final class ClassroomController extends Controller
         }
 
         try {
-            $this->classrooms->create($data);
+            $this->classrooms->create(
+                $data
+            );
         } catch (PDOException $exception) {
             if ($this->isDuplicateNameException($exception)) {
                 $this->session->flash(
@@ -150,7 +170,15 @@ final class ClassroomController extends Controller
     public function edit(
         int $id
     ): Response {
-        $classroom = $this->classrooms->find($id);
+        $forbidden = $this->requireRole([1]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $classroom = $this->classrooms->find(
+            $id
+        );
 
         if ($classroom === null) {
             return Response::notFound();
@@ -172,7 +200,15 @@ final class ClassroomController extends Controller
         Request $request,
         int $id
     ): Response {
-        $classroom = $this->classrooms->find($id);
+        $forbidden = $this->requireRole([1]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $classroom = $this->classrooms->find(
+            $id
+        );
 
         if ($classroom === null) {
             return Response::notFound();
@@ -269,7 +305,15 @@ final class ClassroomController extends Controller
     public function destroy(
         int $id
     ): Response {
-        $classroom = $this->classrooms->find($id);
+        $forbidden = $this->requireRole([1]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $classroom = $this->classrooms->find(
+            $id
+        );
 
         if ($classroom === null) {
             return Response::notFound();
@@ -315,7 +359,9 @@ final class ClassroomController extends Controller
     ): bool {
         return $exception->getCode() === '23000'
             || str_contains(
-                strtolower($exception->getMessage()),
+                strtolower(
+                    $exception->getMessage()
+                ),
                 'duplicate'
             );
     }

@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use SchoolERP\Controllers\DashboardController;
 use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
+use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
 
@@ -19,9 +21,35 @@ $router->get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Classroom Routes
+| Authentication Routes
 |--------------------------------------------------------------------------
 */
+
+$router->get(
+    '/auth/login',
+    [AuthController::class, 'showLogin']
+);
+
+$router->post(
+    '/auth/login',
+    [AuthController::class, 'login']
+);
+
+$router->post(
+    '/auth/logout',
+    [AuthController::class, 'logout']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/dashboard',
+    [DashboardController::class, 'index']
+);
 
 // Classroom list
 $router->get(

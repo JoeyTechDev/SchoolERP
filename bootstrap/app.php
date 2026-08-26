@@ -113,6 +113,7 @@ $kernel = new Kernel(
 
 $kernel->middleware([
     MaintenanceMiddleware::class,
+    \SchoolERP\Middleware\Authenticate::class,
 ]);
 
 /*

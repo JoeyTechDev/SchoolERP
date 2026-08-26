@@ -2,76 +2,99 @@
 
 declare(strict_types=1);
 
-/**
- * ------------------------------------------------------------------------
- * Authenticate.php
- * ------------------------------------------------------------------------
- * SchoolERP
- *
- * Authentication middleware.
- *
- * Ensures that only authenticated users can access protected pages.
- * ------------------------------------------------------------------------
- */
+namespace SchoolERP\Middleware;
 
-require_once __DIR__ . '/../Helpers/Session.php';
+use SchoolERP\Http\Request;
+use SchoolERP\Http\Response;
+use SchoolERP\Services\AuthenticationService;
+use SchoolERP\Session\SessionInterface;
 
-startSecureSession();
-
-/**
- * Ensure the current user is authenticated.
- */
-function requireAuthentication(): void
+final class Authenticate extends Middleware
 {
-// ----------------------------------------------------------
-// Validate browser fingerprint.
-// If the browser changes unexpectedly,
-// terminate the session immediately.
-// ----------------------------------------------------------
-if (
-    isset($_SESSION['user_agent']) &&
-    ($_SESSION['user_agent'] !== ($_SERVER['HTTP_USER_AGENT'] ?? ''))
-) {
-
-    logoutUser();
-
-    startSecureSession();
-
-    $_SESSION['login_error'] =
-        'Your session has expired. Please log in again.';
-
-    header('Location: /SchoolERP/public/auth/login.php');
-    exit;
-}
-    // --------------------------------------------------------------------
-    // Check whether the user is logged in.
-    // --------------------------------------------------------------------
-    if (!isLoggedIn()) {
-
-        logoutUser();
-
-        startSecureSession();
-
-        $_SESSION['login_error'] = 'Please log in to continue.';
-
-        header('Location: /SchoolERP/public/auth/login.php');
-        exit;
+    /**
+     * Constructor.
+     */
+    public function __construct(
+        private AuthenticationService $authentication,
+        private SessionInterface $session
+    ) {
     }
 
-    // --------------------------------------------------------------------
-    // Verify the browser User-Agent.
-    // --------------------------------------------------------------------
-    if (
-        ($_SESSION['user_agent'] ?? '') !== ($_SERVER['HTTP_USER_AGENT'] ?? '')
-    ) {
+    /**
+     * Handle the request.
+     */
+    public function handle(
+        Request $request,
+        callable $next
+    ): Response {
+        $path = $request->path();
 
-        logoutUser();
+        /*
+         * Public authentication routes.
+         */
+        if (
+            $path === '/auth/login'
+            || $path === '/auth/logout'
+        ) {
+            return $this->next(
+                $request,
+                $next
+            );
+        }
 
-        startSecureSession();
+        /*
+         * Require authentication everywhere else.
+         */
+        if (!$this->authentication->check()) {
+            $this->session->flash(
+                '_auth_error',
+                'Please log in to continue.'
+            );
 
-        $_SESSION['login_error'] = 'Your session has expired. Please log in again.';
+            return $this->redirect(
+                '/SchoolERP/public/auth/login'
+            );
+        }
 
-        header('Location: /SchoolERP/public/auth/login.php');
-        exit;
+        /*
+         * Refresh session activity.
+         */
+        $this->session->put(
+            'last_activity',
+            time()
+        );
+
+        /*
+         * Validate the browser fingerprint.
+         */
+        $storedUserAgent = (string) $this->session->get(
+            'user_agent',
+            ''
+        );
+
+        $currentUserAgent = (string) (
+            $_SERVER['HTTP_USER_AGENT'] ?? ''
+        );
+
+        if (
+            $storedUserAgent !== ''
+            && $storedUserAgent !== $currentUserAgent
+        ) {
+            $this->authentication->logout();
+
+            $this->session->flash(
+                '_auth_error',
+                'Your session has expired. Please log in again.'
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/auth/login'
+            );
+        }
+
+        return $this->next(
+            $request,
+            $next
+        );
     }
 }

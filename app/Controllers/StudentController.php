@@ -6,11 +6,11 @@ namespace SchoolERP\Controllers;
 
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
+use SchoolERP\Repositories\ClassroomRepository;
+use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Validation\Validator;
 use SchoolERP\View\ViewFactory;
-use SchoolERP\Repositories\ClassroomRepository;
-use SchoolERP\Repositories\StudentRepository;
 
 /**
  * --------------------------------------------------------------------------
@@ -18,6 +18,8 @@ use SchoolERP\Repositories\StudentRepository;
  * --------------------------------------------------------------------------
  * Student Controller
  * --------------------------------------------------------------------------
+ *
+ * Handles student management.
  */
 final class StudentController extends Controller
 {
@@ -35,101 +37,121 @@ final class StudentController extends Controller
      * Constructor.
      */
     public function __construct(
-    ViewFactory $views,
-    SessionInterface $session,
-    StudentRepository $students,
-    ClassroomRepository $classrooms
-) {
-    parent::__construct(
-        $views,
-        $session
-    );
-
-    $this->students = $students;
-    $this->classrooms = $classrooms;
-} 
-
-/**
- * Display students.
- */
-public function index(
-    Request $request
-): Response {
-    $page = max(
-        1,
-        (int) $request->get('page', 1)
-    );
-
-    $search = trim(
-        (string) $request->get('q', '')
-    );
-
-    if ($search !== '') {
-        $pagination = $this->students->searchPaginated(
-            $search,
-            $page,
-            10
+        ViewFactory $views,
+        SessionInterface $session,
+        StudentRepository $students,
+        ClassroomRepository $classrooms
+    ) {
+        parent::__construct(
+            $views,
+            $session
         );
-    } else {
-        $pagination = $this->students->paginate(
-            $page,
-            10
-        );
+
+        $this->students = $students;
+        $this->classrooms = $classrooms;
     }
 
-    return $this->view(
-        'students.index',
-        [
-            'students' => $pagination->items(),
-            'pagination' => $pagination,
-            'search' => $search,
-        ]
-    );
-}
-
-/**
- * Display a single student.
- */
-public function show(
-    int $id
-): Response {
-    $student = $this->students->find($id);
-
-    if ($student === null) {
-        return Response::notFound();
-    }
-
-    /*
-     * Load the classroom relationship.
+    /**
+     * Display students.
+     *
+     * Administrators and teachers can access student management.
      */
-    $student->setRelation(
-        'classroom',
-        $student->classroom()->get()
-    );
+    public function index(
+        Request $request
+    ): Response {
+        $forbidden = $this->requireRole([1, 2]);
 
-    return $this->view(
-        'students.show',
-        [
-            'student' => $student,
-        ]
-    );
-}
-  
-/**
- * Show the create student form.
- */
-public function create(): Response
-{
-    $classrooms = $this->classrooms->allOrdered();
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
 
-    return $this->view(
-        'students.create',
-        [
-            'title' => 'Create Student',
-            'classrooms' => $classrooms,
-        ]
-    );
-}
+        $page = max(
+            1,
+            (int) $request->get('page', 1)
+        );
+
+        $search = trim(
+            (string) $request->get('q', '')
+        );
+
+        if ($search !== '') {
+            $pagination = $this->students->searchPaginated(
+                $search,
+                $page,
+                10
+            );
+        } else {
+            $pagination = $this->students->paginate(
+                $page,
+                10
+            );
+        }
+
+        return $this->view(
+            'students.index',
+            [
+                'students' => $pagination->items(),
+                'pagination' => $pagination,
+                'search' => $search,
+            ]
+        );
+    }
+
+    /**
+     * Display a single student.
+     */
+    public function show(
+        int $id
+    ): Response {
+        $forbidden = $this->requireRole([1, 2]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $student = $this->students->find($id);
+
+        if ($student === null) {
+            return Response::notFound();
+        }
+
+        /*
+         * Load the classroom relationship.
+         */
+        $student->setRelation(
+            'classroom',
+            $student->classroom()->get()
+        );
+
+        return $this->view(
+            'students.show',
+            [
+                'student' => $student,
+            ]
+        );
+    }
+
+    /**
+     * Show the create student form.
+     */
+    public function create(): Response
+    {
+        $forbidden = $this->requireRole([1, 2]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $classrooms = $this->classrooms->allOrdered();
+
+        return $this->view(
+            'students.create',
+            [
+                'title' => 'Create Student',
+                'classrooms' => $classrooms,
+            ]
+        );
+    }
 
     /**
      * Store a new student.
@@ -137,7 +159,15 @@ public function create(): Response
     public function store(
         Request $request
     ): Response {
-        $classroomId = $request->input('classroom_id');
+        $forbidden = $this->requireRole([1, 2]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $classroomId = $request->input(
+            'classroom_id'
+        );
 
         $data = [
             'first_name' => trim(
@@ -193,29 +223,35 @@ public function create(): Response
         );
     }
 
-/**
- * Show the edit student form.
- */
-public function edit(
-    int $id
-): Response {
-    $student = $this->students->find($id);
+    /**
+     * Show the edit student form.
+     */
+    public function edit(
+        int $id
+    ): Response {
+        $forbidden = $this->requireRole([1, 2]);
 
-    if ($student === null) {
-        return Response::notFound();
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        $student = $this->students->find($id);
+
+        if ($student === null) {
+            return Response::notFound();
+        }
+
+        $classrooms = $this->classrooms->allOrdered();
+
+        return $this->view(
+            'students.edit',
+            [
+                'title' => 'Edit Student',
+                'student' => $student,
+                'classrooms' => $classrooms,
+            ]
+        );
     }
-
-    $classrooms = $this->classrooms->allOrdered();
-
-    return $this->view(
-        'students.edit',
-        [
-            'title' => 'Edit Student',
-            'student' => $student,
-            'classrooms' => $classrooms,
-        ]
-    );
-}
 
     /**
      * Update an existing student.
@@ -224,13 +260,21 @@ public function edit(
         Request $request,
         int $id
     ): Response {
+        $forbidden = $this->requireRole([1, 2]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
         $student = $this->students->find($id);
 
         if ($student === null) {
             return Response::notFound();
         }
 
-        $classroomId = $request->input('classroom_id');
+        $classroomId = $request->input(
+            'classroom_id'
+        );
 
         $data = [
             'first_name' => trim(
@@ -268,14 +312,29 @@ public function edit(
             );
 
             return $this->redirect(
-                '/SchoolERP/public/students/' . $id . '/edit'
+                '/SchoolERP/public/students/'
+                . $id
+                . '/edit'
             );
         }
 
-        $this->students->update(
+        $updated = $this->students->update(
             $id,
             $data
         );
+
+        if (!$updated) {
+            $this->session->flash(
+                'error',
+                'Unable to update student.'
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/students/'
+                . $id
+                . '/edit'
+            );
+        }
 
         $this->session->flash(
             'success',
@@ -283,7 +342,8 @@ public function edit(
         );
 
         return $this->redirect(
-            '/SchoolERP/public/students/' . $id
+            '/SchoolERP/public/students/'
+            . $id
         );
     }
 
@@ -293,13 +353,28 @@ public function edit(
     public function destroy(
         int $id
     ): Response {
+        $forbidden = $this->requireRole([1, 2]);
+
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
         $student = $this->students->find($id);
 
         if ($student === null) {
             return Response::notFound();
         }
 
-        $this->students->delete($id);
+        if (!$this->students->delete($id)) {
+            $this->session->flash(
+                'error',
+                'Unable to delete student.'
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/students'
+            );
+        }
 
         $this->session->flash(
             'success',
