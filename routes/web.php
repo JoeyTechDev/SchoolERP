@@ -5,6 +5,7 @@ declare(strict_types=1);
 use SchoolERP\Controllers\DashboardController;
 use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
+use SchoolERP\Controllers\SubjectController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -175,6 +176,54 @@ $router->post(
 $router->post(
     '/classrooms/{id}/delete',
     [ClassroomController::class, 'destroy']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Subject Routes
+|--------------------------------------------------------------------------
+*/
+
+// Subject list
+$router->get(
+    '/subjects',
+    [SubjectController::class, 'index']
+);
+
+// Create subject form
+$router->get(
+    '/subjects/create',
+    [SubjectController::class, 'create']
+);
+
+// Store subject
+$router->post(
+    '/subjects',
+    [SubjectController::class, 'store']
+);
+
+// Edit subject form
+$router->get(
+    '/subjects/{id}/edit',
+    [SubjectController::class, 'edit']
+);
+
+// Update subject
+$router->post(
+    '/subjects/{id}/update',
+    [SubjectController::class, 'update']
+);
+
+// Activate subject
+$router->post(
+    '/subjects/{id}/activate',
+    [SubjectController::class, 'activate']
+);
+
+// Deactivate subject
+$router->post(
+    '/subjects/{id}/deactivate',
+    [SubjectController::class, 'deactivate']
 );
 
 /*
