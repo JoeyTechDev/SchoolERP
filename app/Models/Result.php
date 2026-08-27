@@ -25,6 +25,17 @@ final class Result extends Model
     ];
 
     /**
+     * Attribute casts.
+     *
+     * @var array<string,string>
+     */
+    protected array $casts = [
+        'id' => 'int',
+        'student_id' => 'int',
+        'score' => 'int',
+    ];
+
+    /**
      * Result belongs to one student.
      */
     public function student()
