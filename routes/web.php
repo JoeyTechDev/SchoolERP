@@ -6,6 +6,8 @@ use SchoolERP\Controllers\DashboardController;
 use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
 use SchoolERP\Controllers\SubjectController;
+use SchoolERP\Controllers\AcademicSessionController;
+use SchoolERP\Controllers\TermController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -224,6 +226,93 @@ $router->post(
 $router->post(
     '/subjects/{id}/deactivate',
     [SubjectController::class, 'deactivate']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Academic Session Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/academic-sessions',
+    [AcademicSessionController::class, 'index']
+);
+
+$router->get(
+    '/academic-sessions/create',
+    [AcademicSessionController::class, 'create']
+);
+
+$router->post(
+    '/academic-sessions',
+    [AcademicSessionController::class, 'store']
+);
+
+$router->get(
+    '/academic-sessions/{id}/edit',
+    [AcademicSessionController::class, 'edit']
+);
+
+$router->post(
+    '/academic-sessions/{id}/update',
+    [AcademicSessionController::class, 'update']
+);
+
+$router->post(
+    '/academic-sessions/{id}/current',
+    [AcademicSessionController::class, 'setCurrent']
+);
+
+$router->post(
+    '/academic-sessions/{id}/activate',
+    [AcademicSessionController::class, 'activate']
+);
+
+$router->post(
+    '/academic-sessions/{id}/deactivate',
+    [AcademicSessionController::class, 'deactivate']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Term Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/terms',
+    [TermController::class, 'index']
+);
+
+$router->get(
+    '/terms/create',
+    [TermController::class, 'create']
+);
+
+$router->post(
+    '/terms',
+    [TermController::class, 'store']
+);
+
+$router->get(
+    '/terms/{id}/edit',
+    [TermController::class, 'edit']
+);
+
+$router->post(
+    '/terms/{id}/update',
+    [TermController::class, 'update']
+);
+
+$router->post(
+    '/terms/{id}/activate',
+    [TermController::class, 'activate']
+);
+
+$router->post(
+    '/terms/{id}/deactivate',
+    [TermController::class, 'deactivate']
 );
 
 /*
