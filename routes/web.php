@@ -8,6 +8,7 @@ use SchoolERP\Controllers\StudentController;
 use SchoolERP\Controllers\SubjectController;
 use SchoolERP\Controllers\AcademicSessionController;
 use SchoolERP\Controllers\AcademicResultController;
+use SchoolERP\Controllers\ReportCardController;
 use SchoolERP\Controllers\TermController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
@@ -356,6 +357,17 @@ $router->post(
 $router->post(
     '/academic-results/{id}/delete',
     [AcademicResultController::class, 'destroy']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Report Card Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/report-card',
+    [ReportCardController::class, 'index']
 );
 
 /*
