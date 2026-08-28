@@ -178,4 +178,28 @@ final class AcademicResultRepository extends Repository
             )
             ->get();
     }
+
+/**
+ * Get all academic results for a session and term.
+ *
+ * @return array<int,array<string,mixed>>
+ */
+public function forSessionAndTerm(
+    int $academicSessionId,
+    int $termId
+): array {
+    return $this->model
+        ->query()
+        ->where(
+            'academic_session_id',
+            '=',
+            $academicSessionId
+        )
+        ->where(
+            'term_id',
+            '=',
+            $termId
+        )
+        ->get();
+}
 }

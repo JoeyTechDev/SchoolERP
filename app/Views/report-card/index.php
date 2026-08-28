@@ -307,6 +307,7 @@ foreach ($terms as $term) {
 
         <?php
         $student = $report['student'];
+        $classroom = $report['classroom'] ?? null;
         $academicSession = $report['academic_session'];
         $term = $report['term'];
         $results = $report['results'] ?? [];
@@ -350,6 +351,18 @@ foreach ($terms as $term) {
                         ) ?>
                     </h3>
 
+                    <?php if ($classroom !== null): ?>
+
+                    <div class="fw-semibold mt-2">
+                        Classroom:
+                        <?= htmlspecialchars(
+                            (string) $classroom->name,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>
+                    </div>
+
+                    <?php endif; ?>
                     <div class="text-muted">
                         <?= htmlspecialchars(
                             (string) (
@@ -399,7 +412,7 @@ foreach ($terms as $term) {
                         </div>
 
                     </div>
-
+        
                     <div class="col-md-4">
 
                         <div class="border rounded p-3 h-100">
@@ -633,60 +646,120 @@ foreach ($terms as $term) {
 
                     </div>
 
-                    <div class="row g-3 mt-3">
+                <div class="row g-3 mt-3">
 
-                        <div class="col-md-4">
+    <div class="col-md-3">
 
-                            <div class="border rounded p-3">
+        <div class="border rounded p-3 h-100">
 
-                                <div class="small text-muted">
-                                    Subjects Recorded
-                                </div>
+            <div class="small text-muted">
+                Subjects Recorded
+            </div>
 
-                                <div class="fs-4 fw-bold">
-                                    <?= $resultCount ?>
-                                </div>
+            <div class="fs-4 fw-bold">
+                <?= $resultCount ?>
+            </div>
 
-                            </div>
+        </div>
 
-                        </div>
+    </div>
 
-                        <div class="col-md-4">
+    <div class="col-md-3">
 
-                            <div class="border rounded p-3">
+        <div class="border rounded p-3 h-100">
 
-                                <div class="small text-muted">
-                                    Total Score
-                                </div>
+            <div class="small text-muted">
+                Total Score
+            </div>
 
-                                <div class="fs-4 fw-bold">
-                                    <?= $totalScore ?>
-                                </div>
+            <div class="fs-4 fw-bold">
+                <?= $totalScore ?>
+            </div>
 
-                            </div>
+        </div>
 
-                        </div>
+    </div>
 
-                        <div class="col-md-4">
+    <div class="col-md-3">
 
-                            <div class="border rounded p-3">
+        <div class="border rounded p-3 h-100">
 
-                                <div class="small text-muted">
-                                    Average Score
-                                </div>
+            <div class="small text-muted">
+                Average Score
+            </div>
 
-                                <div class="fs-4 fw-bold">
-                                    <?= number_format(
-                                        $averageScore,
-                                        2
-                                    ) ?>
-                                </div>
+            <div class="fs-4 fw-bold">
+                <?= number_format(
+                    $averageScore,
+                    2
+                ) ?>
+            </div>
 
-                            </div>
+        </div>
 
-                        </div>
+    </div>
 
-                    </div>
+    <div class="col-md-3">
+
+        <div class="border rounded p-3 h-100">
+
+            <div class="small text-muted">
+                Class Position
+            </div>
+
+            <?php
+            $position = $report['position'] ?? null;
+            $rankedStudents = (int) (
+                $report['ranked_students'] ?? 0
+            );
+
+            $ordinal = static function (?int $value): string {
+                if ($value === null) {
+                    return '—';
+                }
+
+                $mod100 = $value % 100;
+
+                if (
+                    $mod100 >= 11
+                    && $mod100 <= 13
+                ) {
+                    return $value . 'th';
+                }
+
+                return match ($value % 10) {
+                    1 => $value . 'st',
+                    2 => $value . 'nd',
+                    3 => $value . 'rd',
+                    default => $value . 'th',
+                };
+            };
+            ?>
+
+            <div class="fs-4 fw-bold">
+                <?= htmlspecialchars(
+                    $ordinal(
+                        $position
+                    ),
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) ?>
+            </div>
+
+            <?php if ($rankedStudents > 0): ?>
+
+                <div class="small text-muted">
+                    of <?= $rankedStudents ?>
+                    student<?= $rankedStudents === 1 ? '' : 's' ?>
+                </div>
+
+            <?php endif; ?>
+
+        </div>
+
+    </div>
+
+</div>    
 
                 <?php endif; ?>
 

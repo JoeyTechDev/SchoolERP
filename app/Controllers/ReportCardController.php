@@ -59,93 +59,98 @@ final class ReportCardController extends Controller
     }
 
     /**
-     * Display a student report card.
-     */
-    public function index(
-        Request $request
-    ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+ * Display a student report card.
+ */
+public function index(
+    Request $request
+): Response {
+    $forbidden = $this->requireRole([1, 2]);
 
-        if ($forbidden !== null) {
-            return $forbidden;
-        }
-
-        $students = $this->students->allOrdered();
-        $sessions = $this->sessions->active();
-        $terms = $this->terms->active();
-
-        $studentId = max(
-            0,
-            (int) $request->get(
-                'student_id',
-                0
-            )
-        );
-
-        $sessionId = max(
-            0,
-            (int) $request->get(
-                'academic_session_id',
-                0
-            )
-        );
-
-        $termId = max(
-            0,
-            (int) $request->get(
-                'term_id',
-                0
-            )
-        );
-
-        /*
-         * Default to the current academic session.
-         */
-        if ($sessionId === 0) {
-            $currentSession = $this->sessions->current();
-
-            if ($currentSession !== null) {
-                $sessionId = (int) $currentSession->id;
-            }
-        }
-
-        $report = null;
-
-        if (
-            $studentId > 0
-            && $sessionId > 0
-            && $termId > 0
-        ) {
-            try {
-                $report = $this->reports->build(
-                    $studentId,
-                    $sessionId,
-                    $termId
-                );
-            } catch (RuntimeException $exception) {
-                $this->session->flash(
-                    'error',
-                    $exception->getMessage()
-                );
-
-                return $this->redirect(
-                    '/SchoolERP/public/report-card'
-                );
-            }
-        }
-
-        return $this->view(
-            'report-card.index',
-            [
-                'title' => 'Student Report Card',
-                'students' => $students,
-                'sessions' => $sessions,
-                'terms' => $terms,
-                'report' => $report,
-                'studentId' => $studentId,
-                'sessionId' => $sessionId,
-                'termId' => $termId,
-            ]
-        );
+    if ($forbidden !== null) {
+        return $forbidden;
     }
+
+    $students = $this->students->allOrdered();
+
+    /*
+     * Use all sessions and terms so historical reports
+     * remain accessible.
+     */
+    $sessions = $this->sessions->allOrdered();
+    $terms = $this->terms->allOrdered();
+
+    $studentId = max(
+        0,
+        (int) $request->get(
+            'student_id',
+            0
+        )
+    );
+
+    $sessionId = max(
+        0,
+        (int) $request->get(
+            'academic_session_id',
+            0
+        )
+    );
+
+    $termId = max(
+        0,
+        (int) $request->get(
+            'term_id',
+            0
+        )
+    );
+
+    /*
+     * Default to the current academic session.
+     */
+    if ($sessionId === 0) {
+        $currentSession = $this->sessions->current();
+
+        if ($currentSession !== null) {
+            $sessionId = (int) $currentSession->id;
+        }
+    }
+
+    $report = null;
+
+    if (
+        $studentId > 0
+        && $sessionId > 0
+        && $termId > 0
+    ) {
+        try {
+            $report = $this->reports->build(
+                $studentId,
+                $sessionId,
+                $termId
+            );
+        } catch (RuntimeException $exception) {
+            $this->session->flash(
+                'error',
+                $exception->getMessage()
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/report-card'
+            );
+        }
+    }
+
+    return $this->view(
+        'report-card.index',
+        [
+            'title' => 'Student Report Card',
+            'students' => $students,
+            'sessions' => $sessions,
+            'terms' => $terms,
+            'report' => $report,
+            'studentId' => $studentId,
+            'sessionId' => $sessionId,
+            'termId' => $termId,
+        ]
+    );
+}
 }
