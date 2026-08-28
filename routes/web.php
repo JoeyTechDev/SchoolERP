@@ -7,6 +7,7 @@ use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
 use SchoolERP\Controllers\SubjectController;
 use SchoolERP\Controllers\AcademicSessionController;
+use SchoolERP\Controllers\AcademicResultController;
 use SchoolERP\Controllers\TermController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
@@ -313,6 +314,48 @@ $router->post(
 $router->post(
     '/terms/{id}/deactivate',
     [TermController::class, 'deactivate']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Academic Result Routes
+|--------------------------------------------------------------------------
+*/
+
+// Academic result list/filter
+$router->get(
+    '/academic-results',
+    [AcademicResultController::class, 'index']
+);
+
+// Create result form
+$router->get(
+    '/academic-results/create',
+    [AcademicResultController::class, 'create']
+);
+
+// Store result
+$router->post(
+    '/academic-results',
+    [AcademicResultController::class, 'store']
+);
+
+// Edit result form
+$router->get(
+    '/academic-results/{id}/edit',
+    [AcademicResultController::class, 'edit']
+);
+
+// Update result
+$router->post(
+    '/academic-results/{id}/update',
+    [AcademicResultController::class, 'update']
+);
+
+// Delete result
+$router->post(
+    '/academic-results/{id}/delete',
+    [AcademicResultController::class, 'destroy']
 );
 
 /*

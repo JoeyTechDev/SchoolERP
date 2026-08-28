@@ -31,6 +31,20 @@ final class StudentRepository extends Repository
     }
 
     /**
+     * Get all students ordered by last name and first name.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function allOrdered(): array
+    {
+        return $this->model
+            ->query()
+            ->orderBy('last_name', 'ASC')
+            ->orderBy('first_name', 'ASC')
+            ->get();
+    }
+
+    /**
      * Paginate students.
      */
     public function paginate(
