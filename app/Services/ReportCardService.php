@@ -11,6 +11,7 @@ use SchoolERP\Models\Student;
 use SchoolERP\Models\Term;
 use SchoolERP\Repositories\AcademicResultRepository;
 use SchoolERP\Repositories\AcademicSessionRepository;
+use SchoolERP\Repositories\AttendanceRepository;
 use SchoolERP\Repositories\ClassroomRepository;
 use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Repositories\SubjectRepository;
@@ -27,7 +28,8 @@ final class ReportCardService
         private SubjectRepository $subjects,
         private AcademicSessionRepository $sessions,
         private TermRepository $terms,
-        private ClassroomRepository $classrooms
+        private ClassroomRepository $classrooms,
+        private AttendanceRepository $attendance
     ) {
     }
 
@@ -44,7 +46,15 @@ final class ReportCardService
      *     average_score: float,
      *     result_count: int,
      *     position: int|null,
-     *     ranked_students: int
+     *     ranked_students: int,
+     *     attendance_summary: array{
+     *         total_days: int,
+     *         present: int,
+     *         absent: int,
+     *         late: int,
+     *         excused: int,
+     *         attendance_rate: float
+     *     }
      * }
      */
     public function build(
@@ -206,17 +216,40 @@ final class ReportCardService
             $termId
         );
 
+        /*
+         * Get attendance summary from the Attendance module.
+         *
+         * This keeps attendance calculation centralized.
+         */
+        $attendanceSummary =
+            $this->attendance->summaryForStudent(
+                $studentId,
+                $academicSessionId,
+                $termId
+            );
+
         return [
             'student' => $student,
+
             'classroom' => $classroom,
+
             'academic_session' => $academicSession,
+
             'term' => $term,
+
             'results' => $reportResults,
+
             'total_score' => $totalScore,
+
             'average_score' => $averageScore,
+
             'result_count' => $resultCount,
+
             'position' => $ranking['position'],
+
             'ranked_students' => $ranking['ranked_students'],
+
+            'attendance_summary' => $attendanceSummary,
         ];
     }
 
@@ -265,7 +298,7 @@ final class ReportCardService
         }
 
         /*
-         * Build a lookup of students who belong to the class.
+         * Build a lookup of students who belong to this class.
          */
         $studentIds = [];
 
@@ -314,11 +347,11 @@ final class ReportCardService
             $totals[$resultStudentId] += $score;
         }
 
-        /*
-         * The student cannot be ranked without results.
-         */
         $currentStudentId = (int) $student->id;
 
+        /*
+         * A student without academic results cannot be ranked.
+         */
         if (!isset($totals[$currentStudentId])) {
             return [
                 'position' => null,
@@ -342,9 +375,7 @@ final class ReportCardService
             $position++;
 
             /*
-             * Assign a new rank only when the score changes.
-             *
-             * Example:
+             * Competition ranking:
              *
              * 100 → 1
              * 90  → 2

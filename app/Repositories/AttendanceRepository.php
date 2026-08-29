@@ -240,4 +240,87 @@ public function forDateIndexedByStudent(
 
     return $indexed;
 }
+
+/**
+ * Get attendance summary for a student in a session and term.
+ *
+ * Attendance rate is calculated as:
+ *
+ * (Present + Late) / Total Recorded Days * 100
+ *
+ * @return array{
+ *     total_days: int,
+ *     present: int,
+ *     absent: int,
+ *     late: int,
+ *     excused: int,
+ *     attendance_rate: float
+ * }
+ */
+public function summaryForStudent(
+    int $studentId,
+    int $academicSessionId,
+    int $termId
+): array {
+    $records = $this->forStudent(
+        $studentId,
+        $academicSessionId,
+        $termId
+    );
+
+    $summary = [
+        'total_days' => 0,
+        'present' => 0,
+        'absent' => 0,
+        'late' => 0,
+        'excused' => 0,
+        'attendance_rate' => 0.0,
+    ];
+
+    foreach ($records as $record) {
+        $summary['total_days']++;
+
+        $status = strtolower(
+            trim(
+                (string) (
+                    $record['status'] ?? ''
+                )
+            )
+        );
+
+        switch ($status) {
+            case 'present':
+                $summary['present']++;
+                break;
+
+            case 'absent':
+                $summary['absent']++;
+                break;
+
+            case 'late':
+                $summary['late']++;
+                break;
+
+            case 'excused':
+                $summary['excused']++;
+                break;
+        }
+    }
+
+    if ($summary['total_days'] > 0) {
+        $attendedDays =
+            $summary['present']
+            + $summary['late'];
+
+        $summary['attendance_rate'] = round(
+            (
+                $attendedDays
+                / $summary['total_days']
+            ) * 100,
+            2
+        );
+    }
+
+    return $summary;
+}
 }

@@ -312,6 +312,9 @@ foreach ($terms as $term) {
         $term = $report['term'];
         $results = $report['results'] ?? [];
 
+        $attendanceSummary =
+        $report['attendance_summary'] ?? null;
+
         $resultCount = (int) (
             $report['result_count'] ?? 0
         );
@@ -762,6 +765,144 @@ foreach ($terms as $term) {
 </div>    
 
                 <?php endif; ?>
+
+<?php if ($attendanceSummary !== null): ?>
+
+    <div class="mt-5">
+
+        <div class="border-bottom pb-2 mb-3">
+
+            <h3 class="h5 mb-0">
+                Attendance Summary
+            </h3>
+
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-2 col-6">
+
+                <div class="border rounded p-3 text-center h-100">
+
+                    <div class="small text-muted">
+                        School Days
+                    </div>
+
+                    <div class="fs-4 fw-bold">
+                        <?= (int) (
+                            $attendanceSummary['total_days']
+                            ?? 0
+                        ) ?>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-2 col-6">
+
+                <div class="border rounded p-3 text-center h-100">
+
+                    <div class="small text-muted">
+                        Present
+                    </div>
+
+                    <div class="fs-4 fw-bold text-success">
+                        <?= (int) (
+                            $attendanceSummary['present']
+                            ?? 0
+                        ) ?>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-2 col-6">
+
+                <div class="border rounded p-3 text-center h-100">
+
+                    <div class="small text-muted">
+                        Absent
+                    </div>
+
+                    <div class="fs-4 fw-bold text-danger">
+                        <?= (int) (
+                            $attendanceSummary['absent']
+                            ?? 0
+                        ) ?>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-2 col-6">
+
+                <div class="border rounded p-3 text-center h-100">
+
+                    <div class="small text-muted">
+                        Late
+                    </div>
+
+                    <div class="fs-4 fw-bold text-warning">
+                        <?= (int) (
+                            $attendanceSummary['late']
+                            ?? 0
+                        ) ?>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-2 col-6">
+
+                <div class="border rounded p-3 text-center h-100">
+
+                    <div class="small text-muted">
+                        Excused
+                    </div>
+
+                    <div class="fs-4 fw-bold">
+                        <?= (int) (
+                            $attendanceSummary['excused']
+                            ?? 0
+                        ) ?>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-2 col-6">
+
+                <div class="border rounded p-3 text-center h-100">
+
+                    <div class="small text-muted">
+                        Attendance Rate
+                    </div>
+
+                    <div class="fs-4 fw-bold">
+                        <?= number_format(
+                            (float) (
+                                $attendanceSummary[
+                                    'attendance_rate'
+                                ] ?? 0
+                            ),
+                            2
+                        ) ?>%
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+<?php endif; ?>
 
                 <div class="text-center text-muted small mt-5">
 

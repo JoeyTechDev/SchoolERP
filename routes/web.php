@@ -11,6 +11,7 @@ use SchoolERP\Controllers\AcademicResultController;
 use SchoolERP\Controllers\ReportCardController;
 use SchoolERP\Controllers\TermController;
 use SchoolERP\Controllers\AttendanceController;
+use SchoolERP\Controllers\AttendanceHistoryController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -387,6 +388,17 @@ $router->get(
 $router->post(
     '/attendance',
     [AttendanceController::class, 'store']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Attendance History Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/attendance/history',
+    [AttendanceHistoryController::class, 'index']
 );
 
 /*
