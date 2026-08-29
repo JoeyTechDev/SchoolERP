@@ -211,4 +211,33 @@ final class AttendanceRepository extends Repository
             )
             ->get();
     }
+
+/**
+ * Get attendance records for a date indexed by student ID.
+ *
+ * @return array<int,array<string,mixed>>
+ */
+public function forDateIndexedByStudent(
+    string $attendanceDate,
+    int $academicSessionId,
+    int $termId
+): array {
+    $records = $this->forDate(
+        $attendanceDate,
+        $academicSessionId,
+        $termId
+    );
+
+    $indexed = [];
+
+    foreach ($records as $record) {
+        $studentId = (int) (
+            $record['student_id'] ?? 0
+        );
+
+        $indexed[$studentId] = $record;
+    }
+
+    return $indexed;
+}
 }

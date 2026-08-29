@@ -10,6 +10,7 @@ use SchoolERP\Controllers\AcademicSessionController;
 use SchoolERP\Controllers\AcademicResultController;
 use SchoolERP\Controllers\ReportCardController;
 use SchoolERP\Controllers\TermController;
+use SchoolERP\Controllers\AttendanceController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -368,6 +369,24 @@ $router->post(
 $router->get(
     '/report-card',
     [ReportCardController::class, 'index']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Attendance Routes
+|--------------------------------------------------------------------------
+*/
+
+// Daily attendance
+$router->get(
+    '/attendance',
+    [AttendanceController::class, 'index']
+);
+
+// Save classroom attendance
+$router->post(
+    '/attendance',
+    [AttendanceController::class, 'store']
 );
 
 /*
