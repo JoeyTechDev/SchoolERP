@@ -17,51 +17,72 @@ use SchoolERP\Session\SessionInterface;
 $students = $students ?? [];
 $sessions = $sessions ?? [];
 $terms = $terms ?? [];
-
 $report = $report ?? null;
 
 $studentId = (int) ($studentId ?? 0);
 $sessionId = (int) ($sessionId ?? 0);
 $termId = (int) ($termId ?? 0);
 
+/*
+|--------------------------------------------------------------------------
+| Session
+|--------------------------------------------------------------------------
+*/
+
 $session = $GLOBALS['container']->make(
     SessionInterface::class
 );
 
+$success = $session->flash('success');
 $error = $session->flash('error');
 
-$studentName = '';
+/*
+|--------------------------------------------------------------------------
+| Selected filter names
+|--------------------------------------------------------------------------
+*/
 
-foreach ($students as $student) {
-    if ((int) $student['id'] === $studentId) {
-        $studentName = trim(
-            (string) ($student['first_name'] ?? '')
+$selectedStudentName = '';
+
+foreach ($students as $item) {
+    if (
+        (int) ($item['id'] ?? 0)
+        === $studentId
+    ) {
+        $selectedStudentName = trim(
+            (string) ($item['first_name'] ?? '')
             . ' '
-            . (string) ($student['last_name'] ?? '')
+            . (string) ($item['last_name'] ?? '')
         );
 
         break;
     }
 }
 
-$sessionName = '';
+$selectedSessionName = '';
 
-foreach ($sessions as $academicSession) {
-    if ((int) $academicSession['id'] === $sessionId) {
-        $sessionName = (string) (
-            $academicSession['name'] ?? ''
+foreach ($sessions as $item) {
+    if (
+        (int) ($item['id'] ?? 0)
+        === $sessionId
+    ) {
+        $selectedSessionName = (string) (
+            $item['name'] ?? ''
         );
 
         break;
     }
 }
 
-$termName = '';
+$selectedTermName = '';
 
-foreach ($terms as $term) {
-    if ((int) $term['id'] === $termId) {
-        $termName = (string) (
-            $term['name'] ?? ''
+foreach ($terms as $item) {
+    if (
+        (int) ($item['id'] ?? 0)
+        === $termId
+    ) {
+        $selectedTermName = (string) (
+            $item['name'] ?? ''
         );
 
         break;
@@ -70,6 +91,10 @@ foreach ($terms as $term) {
 ?>
 
 <div class="container-fluid py-4">
+
+    <!-- ============================================================= -->
+    <!-- PAGE HEADER                                                    -->
+    <!-- ============================================================= -->
 
     <div class="d-flex justify-content-between align-items-center mb-4">
 
@@ -80,7 +105,7 @@ foreach ($terms as $term) {
             </h1>
 
             <p class="text-muted mb-0">
-                View academic performance by session and term.
+                View and manage a student's academic report.
             </p>
 
         </div>
@@ -92,6 +117,7 @@ foreach ($terms as $term) {
                 class="btn btn-outline-secondary"
                 onclick="window.print()"
             >
+                <i class="bi bi-printer me-1"></i>
                 Print
             </button>
 
@@ -99,20 +125,72 @@ foreach ($terms as $term) {
 
     </div>
 
+
+    <!-- ============================================================= -->
+    <!-- FLASH MESSAGES                                                 -->
+    <!-- ============================================================= -->
+
+    <?php if (
+        is_string($success)
+        && $success !== ''
+    ): ?>
+
+        <div
+            class="alert alert-success alert-dismissible fade show"
+            role="alert"
+        >
+            <i class="bi bi-check-circle me-1"></i>
+
+            <?= htmlspecialchars(
+                $success,
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+            ></button>
+
+        </div>
+
+    <?php endif; ?>
+
+
     <?php if (
         is_string($error)
         && $error !== ''
     ): ?>
 
-        <div class="alert alert-danger">
+        <div
+            class="alert alert-danger alert-dismissible fade show"
+            role="alert"
+        >
+            <i class="bi bi-exclamation-circle me-1"></i>
+
             <?= htmlspecialchars(
                 $error,
                 ENT_QUOTES,
                 'UTF-8'
             ) ?>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+            ></button>
+
         </div>
 
     <?php endif; ?>
+
+
+    <!-- ============================================================= -->
+    <!-- REPORT FILTERS                                                 -->
+    <!-- ============================================================= -->
 
     <div class="card shadow-sm mb-4">
 
@@ -125,6 +203,7 @@ foreach ($terms as $term) {
 
                 <div class="row g-3 align-items-end">
 
+                    <!-- Student -->
                     <div class="col-md-4">
 
                         <label
@@ -184,6 +263,8 @@ foreach ($terms as $term) {
 
                     </div>
 
+
+                    <!-- Academic Session -->
                     <div class="col-md-3">
 
                         <label
@@ -208,8 +289,7 @@ foreach ($terms as $term) {
 
                                 <?php
                                 $id = (int) (
-                                    $academicSession['id']
-                                    ?? 0
+                                    $academicSession['id'] ?? 0
                                 );
                                 ?>
 
@@ -235,6 +315,8 @@ foreach ($terms as $term) {
 
                     </div>
 
+
+                    <!-- Term -->
                     <div class="col-md-3">
 
                         <label
@@ -284,12 +366,15 @@ foreach ($terms as $term) {
 
                     </div>
 
+
+                    <!-- Generate -->
                     <div class="col-md-2">
 
                         <button
                             type="submit"
                             class="btn btn-primary w-100"
                         >
+                            <i class="bi bi-file-earmark-text me-1"></i>
                             Generate
                         </button>
 
@@ -303,17 +388,30 @@ foreach ($terms as $term) {
 
     </div>
 
+
+    <!-- ============================================================= -->
+    <!-- REPORT                                                          -->
+    <!-- ============================================================= -->
+
     <?php if ($report !== null): ?>
 
         <?php
         $student = $report['student'];
+
         $classroom = $report['classroom'] ?? null;
-        $academicSession = $report['academic_session'];
+
+        $academicSession =
+            $report['academic_session'];
+
         $term = $report['term'];
+
         $results = $report['results'] ?? [];
 
         $attendanceSummary =
-        $report['attendance_summary'] ?? null;
+            $report['attendance_summary'] ?? null;
+
+        $reportSummary =
+            $report['report_summary'] ?? null;
 
         $resultCount = (int) (
             $report['result_count'] ?? 0
@@ -326,11 +424,92 @@ foreach ($terms as $term) {
         $averageScore = (float) (
             $report['average_score'] ?? 0
         );
+
+        $position = $report['position'] ?? null;
+
+        $rankedStudents = (int) (
+            $report['ranked_students'] ?? 0
+        );
+
+        /*
+         * Determine the current user's role.
+         */
+        $currentRoleId = (int) (
+            $session->get(
+                'role_id',
+                0
+            )
+        );
+
+        /*
+         * Report-card summary values.
+         */
+        $classTeacherRemark = '';
+
+        $principalRemark = '';
+
+        $promotionStatus = 'pending';
+
+        if ($reportSummary !== null) {
+
+            $classTeacherRemark = (string) (
+                $reportSummary->class_teacher_remark
+                ?? ''
+            );
+
+            $principalRemark = (string) (
+                $reportSummary->principal_remark
+                ?? ''
+            );
+
+            $promotionStatus = (string) (
+                $reportSummary->promotion_status
+                ?? 'pending'
+            );
+        }
+
+        /*
+         * Convert numeric position to ordinal.
+         */
+        $ordinal = static function (
+            ?int $value
+        ): string {
+
+            if ($value === null) {
+                return '—';
+            }
+
+            $mod100 = $value % 100;
+
+            if (
+                $mod100 >= 11
+                && $mod100 <= 13
+            ) {
+                return $value . 'th';
+            }
+
+            return match ($value % 10) {
+                1 => $value . 'st',
+                2 => $value . 'nd',
+                3 => $value . 'rd',
+                default => $value . 'th',
+            };
+        };
         ?>
+
+
+        <!-- ========================================================= -->
+        <!-- PRINTABLE REPORT CARD                                      -->
+        <!-- ========================================================= -->
 
         <div class="card shadow-sm report-card">
 
             <div class="card-body p-4">
+
+
+                <!-- ================================================= -->
+                <!-- REPORT HEADER                                       -->
+                <!-- ================================================= -->
 
                 <div class="text-center border-bottom pb-4 mb-4">
 
@@ -343,52 +522,76 @@ foreach ($terms as $term) {
                     </p>
 
                     <h3 class="h4 fw-bold mb-1">
+
                         <?= htmlspecialchars(
                             trim(
-                                (string) $student->first_name
+                                (string) (
+                                    $student->first_name
+                                    ?? ''
+                                )
                                 . ' '
-                                . (string) $student->last_name
+                                . (string) (
+                                    $student->last_name
+                                    ?? ''
+                                )
                             ),
                             ENT_QUOTES,
                             'UTF-8'
                         ) ?>
+
                     </h3>
 
                     <?php if ($classroom !== null): ?>
 
-                    <div class="fw-semibold mt-2">
-                        Classroom:
-                        <?= htmlspecialchars(
-                            (string) $classroom->name,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
-                    </div>
+                        <div class="fw-semibold mt-2">
+
+                            Classroom:
+
+                            <?= htmlspecialchars(
+                                (string) (
+                                    $classroom->name
+                                    ?? ''
+                                ),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+
+                        </div>
 
                     <?php endif; ?>
-                    <div class="text-muted">
+
+                    <div class="text-muted mt-1">
+
                         <?= htmlspecialchars(
                             (string) (
                                 $academicSession->name
-                                ?? $sessionName
+                                ?? $selectedSessionName
                             ),
                             ENT_QUOTES,
                             'UTF-8'
                         ) ?>
 
-                        &nbsp;•&nbsp;
+                        <span class="mx-1">
+                            •
+                        </span>
 
                         <?= htmlspecialchars(
                             (string) (
                                 $term->name
-                                ?? $termName
+                                ?? $selectedTermName
                             ),
                             ENT_QUOTES,
                             'UTF-8'
                         ) ?>
+
                     </div>
 
                 </div>
+
+
+                <!-- ================================================= -->
+                <!-- STUDENT INFORMATION                                -->
+                <!-- ================================================= -->
 
                 <div class="row g-3 mb-4">
 
@@ -401,30 +604,68 @@ foreach ($terms as $term) {
                             </div>
 
                             <div class="fw-semibold">
+
                                 <?= htmlspecialchars(
                                     trim(
-                                        (string) $student->first_name
+                                        (string) (
+                                            $student->first_name
+                                            ?? ''
+                                        )
                                         . ' '
-                                        . (string) $student->last_name
+                                        . (string) (
+                                            $student->last_name
+                                            ?? ''
+                                        )
                                     ),
                                     ENT_QUOTES,
                                     'UTF-8'
                                 ) ?>
+
                             </div>
 
                         </div>
 
                     </div>
-        
+
+
                     <div class="col-md-4">
 
                         <div class="border rounded p-3 h-100">
 
                             <div class="small text-muted">
-                                Academic Session
+                                Classroom
                             </div>
 
                             <div class="fw-semibold">
+
+                                <?= htmlspecialchars(
+                                    $classroom !== null
+                                        ? (string) (
+                                            $classroom->name
+                                            ?? ''
+                                        )
+                                        : 'Not Assigned',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <div class="border rounded p-3 h-100">
+
+                            <div class="small text-muted">
+                                Academic Period
+                            </div>
+
+                            <div class="fw-semibold">
+
                                 <?= htmlspecialchars(
                                     (string) (
                                         $academicSession->name
@@ -433,21 +674,11 @@ foreach ($terms as $term) {
                                     ENT_QUOTES,
                                     'UTF-8'
                                 ) ?>
-                            </div>
 
-                        </div>
+                                <span class="text-muted">
+                                    •
+                                </span>
 
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="border rounded p-3 h-100">
-
-                            <div class="small text-muted">
-                                Term
-                            </div>
-
-                            <div class="fw-semibold">
                                 <?= htmlspecialchars(
                                     (string) (
                                         $term->name
@@ -456,6 +687,7 @@ foreach ($terms as $term) {
                                     ENT_QUOTES,
                                     'UTF-8'
                                 ) ?>
+
                             </div>
 
                         </div>
@@ -464,11 +696,27 @@ foreach ($terms as $term) {
 
                 </div>
 
+
+                <!-- ================================================= -->
+                <!-- ACADEMIC RESULTS                                   -->
+                <!-- ================================================= -->
+
+                <div class="border-bottom pb-2 mb-3">
+
+                    <h3 class="h5 mb-0">
+                        Academic Performance
+                    </h3>
+
+                </div>
+
+
                 <?php if ($results === []): ?>
 
                     <div class="alert alert-info">
+
                         No academic results have been recorded
                         for this student, session, and term.
+
                     </div>
 
                 <?php else: ?>
@@ -525,44 +773,64 @@ foreach ($terms as $term) {
                             <tbody>
 
                                 <?php
-                                $position = 1;
+                                $counter = 1;
                                 ?>
 
                                 <?php foreach ($results as $result): ?>
 
+                                    <?php
+                                    $grade = (string) (
+                                        $result['grade'] ?? ''
+                                    );
+
+                                    $remark = (string) (
+                                        $result['remark'] ?? ''
+                                    );
+                                    ?>
+
                                     <tr>
 
                                         <td>
-                                            <?= $position++ ?>
+                                            <?= $counter++ ?>
                                         </td>
 
                                         <td>
 
                                             <strong>
+
                                                 <?= htmlspecialchars(
                                                     (string) (
-                                                        $result['subject_name']
+                                                        $result[
+                                                            'subject_name'
+                                                        ]
                                                         ?? 'Unknown Subject'
                                                     ),
                                                     ENT_QUOTES,
                                                     'UTF-8'
                                                 ) ?>
+
                                             </strong>
 
                                             <?php if (
                                                 !empty(
-                                                    $result['subject_code']
+                                                    $result[
+                                                        'subject_code'
+                                                    ]
                                                 )
                                             ): ?>
 
                                                 <div class="small text-muted">
+
                                                     <?= htmlspecialchars(
-                                                        (string) $result[
-                                                            'subject_code'
-                                                        ],
+                                                        (string) (
+                                                            $result[
+                                                                'subject_code'
+                                                            ]
+                                                        ),
                                                         ENT_QUOTES,
                                                         'UTF-8'
                                                     ) ?>
+
                                                 </div>
 
                                             <?php endif; ?>
@@ -570,6 +838,7 @@ foreach ($terms as $term) {
                                         </td>
 
                                         <td class="text-center">
+
                                             <?= htmlspecialchars(
                                                 (string) (
                                                     $result['ca_score']
@@ -578,9 +847,11 @@ foreach ($terms as $term) {
                                                 ENT_QUOTES,
                                                 'UTF-8'
                                             ) ?>
+
                                         </td>
 
                                         <td class="text-center">
+
                                             <?= htmlspecialchars(
                                                 (string) (
                                                     $result['exam_score']
@@ -589,35 +860,38 @@ foreach ($terms as $term) {
                                                 ENT_QUOTES,
                                                 'UTF-8'
                                             ) ?>
+
                                         </td>
 
                                         <td class="text-center fw-semibold">
+
                                             <?= htmlspecialchars(
                                                 (string) (
-                                                    $result['total_score']
+                                                    $result[
+                                                        'total_score'
+                                                    ]
                                                     ?? '—'
                                                 ),
                                                 ENT_QUOTES,
                                                 'UTF-8'
                                             ) ?>
+
                                         </td>
 
                                         <td class="text-center">
 
-                                            <?php
-                                            $grade = (string) (
-                                                $result['grade'] ?? ''
-                                            );
-                                            ?>
-
-                                            <?php if ($grade !== ''): ?>
+                                            <?php if (
+                                                $grade !== ''
+                                            ): ?>
 
                                                 <span class="badge text-bg-primary">
+
                                                     <?= htmlspecialchars(
                                                         $grade,
                                                         ENT_QUOTES,
                                                         'UTF-8'
                                                     ) ?>
+
                                                 </span>
 
                                             <?php else: ?>
@@ -629,14 +903,15 @@ foreach ($terms as $term) {
                                         </td>
 
                                         <td>
+
                                             <?= htmlspecialchars(
-                                                (string) (
-                                                    $result['remark']
-                                                    ?: '—'
-                                                ),
+                                                $remark !== ''
+                                                    ? $remark
+                                                    : '—',
                                                 ENT_QUOTES,
                                                 'UTF-8'
                                             ) ?>
+
                                         </td>
 
                                     </tr>
@@ -649,262 +924,461 @@ foreach ($terms as $term) {
 
                     </div>
 
+                <?php endif; ?>
+
+
+                <!-- ================================================= -->
+                <!-- ACADEMIC SUMMARY                                   -->
+                <!-- ================================================= -->
+
                 <div class="row g-3 mt-3">
 
-    <div class="col-md-3">
+                    <div class="col-md-3">
 
-        <div class="border rounded p-3 h-100">
+                        <div class="border rounded p-3 h-100">
 
-            <div class="small text-muted">
-                Subjects Recorded
-            </div>
+                            <div class="small text-muted">
+                                Subjects Recorded
+                            </div>
 
-            <div class="fs-4 fw-bold">
-                <?= $resultCount ?>
-            </div>
+                            <div class="fs-4 fw-bold">
+                                <?= $resultCount ?>
+                            </div>
 
-        </div>
+                        </div>
 
-    </div>
+                    </div>
 
-    <div class="col-md-3">
 
-        <div class="border rounded p-3 h-100">
+                    <div class="col-md-3">
 
-            <div class="small text-muted">
-                Total Score
-            </div>
+                        <div class="border rounded p-3 h-100">
 
-            <div class="fs-4 fw-bold">
-                <?= $totalScore ?>
-            </div>
+                            <div class="small text-muted">
+                                Total Score
+                            </div>
 
-        </div>
+                            <div class="fs-4 fw-bold">
+                                <?= $totalScore ?>
+                            </div>
 
-    </div>
+                        </div>
 
-    <div class="col-md-3">
+                    </div>
 
-        <div class="border rounded p-3 h-100">
 
-            <div class="small text-muted">
-                Average Score
-            </div>
+                    <div class="col-md-3">
 
-            <div class="fs-4 fw-bold">
-                <?= number_format(
-                    $averageScore,
-                    2
-                ) ?>
-            </div>
+                        <div class="border rounded p-3 h-100">
 
-        </div>
+                            <div class="small text-muted">
+                                Average Score
+                            </div>
 
-    </div>
+                            <div class="fs-4 fw-bold">
 
-    <div class="col-md-3">
+                                <?= number_format(
+                                    $averageScore,
+                                    2
+                                ) ?>
 
-        <div class="border rounded p-3 h-100">
+                            </div>
 
-            <div class="small text-muted">
-                Class Position
-            </div>
+                        </div>
 
-            <?php
-            $position = $report['position'] ?? null;
-            $rankedStudents = (int) (
-                $report['ranked_students'] ?? 0
-            );
+                    </div>
 
-            $ordinal = static function (?int $value): string {
-                if ($value === null) {
-                    return '—';
-                }
 
-                $mod100 = $value % 100;
+                    <div class="col-md-3">
 
-                if (
-                    $mod100 >= 11
-                    && $mod100 <= 13
-                ) {
-                    return $value . 'th';
-                }
+                        <div class="border rounded p-3 h-100">
 
-                return match ($value % 10) {
-                    1 => $value . 'st',
-                    2 => $value . 'nd',
-                    3 => $value . 'rd',
-                    default => $value . 'th',
-                };
-            };
-            ?>
+                            <div class="small text-muted">
+                                Class Position
+                            </div>
 
-            <div class="fs-4 fw-bold">
-                <?= htmlspecialchars(
-                    $ordinal(
-                        $position
-                    ),
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </div>
+                            <div class="fs-4 fw-bold">
 
-            <?php if ($rankedStudents > 0): ?>
+                                <?= htmlspecialchars(
+                                    $ordinal($position),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
 
-                <div class="small text-muted">
-                    of <?= $rankedStudents ?>
-                    student<?= $rankedStudents === 1 ? '' : 's' ?>
+                            </div>
+
+                            <?php if (
+                                $rankedStudents > 0
+                            ): ?>
+
+                                <div class="small text-muted">
+
+                                    of <?= $rankedStudents ?>
+
+                                    student<?= $rankedStudents === 1
+                                        ? ''
+                                        : 's' ?>
+
+                                </div>
+
+                            <?php endif; ?>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-            <?php endif; ?>
 
-        </div>
+                <!-- ================================================= -->
+                <!-- ATTENDANCE SUMMARY                                 -->
+                <!-- ================================================= -->
 
-    </div>
+                <?php if ($attendanceSummary !== null): ?>
 
-</div>    
+                    <div class="mt-5">
+
+                        <div class="border-bottom pb-2 mb-3">
+
+                            <h3 class="h5 mb-0">
+                                Attendance Summary
+                            </h3>
+
+                        </div>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-2 col-6">
+
+                                <div class="border rounded p-3 text-center h-100">
+
+                                    <div class="small text-muted">
+                                        School Days
+                                    </div>
+
+                                    <div class="fs-4 fw-bold">
+                                        <?= (int) (
+                                            $attendanceSummary[
+                                                'total_days'
+                                            ] ?? 0
+                                        ) ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-md-2 col-6">
+
+                                <div class="border rounded p-3 text-center h-100">
+
+                                    <div class="small text-muted">
+                                        Present
+                                    </div>
+
+                                    <div class="fs-4 fw-bold text-success">
+                                        <?= (int) (
+                                            $attendanceSummary[
+                                                'present'
+                                            ] ?? 0
+                                        ) ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-md-2 col-6">
+
+                                <div class="border rounded p-3 text-center h-100">
+
+                                    <div class="small text-muted">
+                                        Absent
+                                    </div>
+
+                                    <div class="fs-4 fw-bold text-danger">
+                                        <?= (int) (
+                                            $attendanceSummary[
+                                                'absent'
+                                            ] ?? 0
+                                        ) ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-md-2 col-6">
+
+                                <div class="border rounded p-3 text-center h-100">
+
+                                    <div class="small text-muted">
+                                        Late
+                                    </div>
+
+                                    <div class="fs-4 fw-bold text-warning">
+                                        <?= (int) (
+                                            $attendanceSummary[
+                                                'late'
+                                            ] ?? 0
+                                        ) ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-md-2 col-6">
+
+                                <div class="border rounded p-3 text-center h-100">
+
+                                    <div class="small text-muted">
+                                        Excused
+                                    </div>
+
+                                    <div class="fs-4 fw-bold">
+                                        <?= (int) (
+                                            $attendanceSummary[
+                                                'excused'
+                                            ] ?? 0
+                                        ) ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="col-md-2 col-6">
+
+                                <div class="border rounded p-3 text-center h-100">
+
+                                    <div class="small text-muted">
+                                        Attendance Rate
+                                    </div>
+
+                                    <div class="fs-4 fw-bold">
+
+                                        <?= number_format(
+                                            (float) (
+                                                $attendanceSummary[
+                                                    'attendance_rate'
+                                                ] ?? 0
+                                            ),
+                                            2
+                                        ) ?>%
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
 
                 <?php endif; ?>
 
-<?php if ($attendanceSummary !== null): ?>
 
-    <div class="mt-5">
+                <!-- ================================================= -->
+                <!-- REMARKS & PROMOTION                                -->
+                <!-- ================================================= -->
 
-        <div class="border-bottom pb-2 mb-3">
+                <div class="mt-5">
 
-            <h3 class="h5 mb-0">
-                Attendance Summary
-            </h3>
+                    <div class="border-bottom pb-2 mb-3">
 
-        </div>
+                        <h3 class="h5 mb-0">
+                            Teacher's Remarks & Promotion
+                        </h3>
 
-        <div class="row g-3">
-
-            <div class="col-md-2 col-6">
-
-                <div class="border rounded p-3 text-center h-100">
-
-                    <div class="small text-muted">
-                        School Days
                     </div>
 
-                    <div class="fs-4 fw-bold">
-                        <?= (int) (
-                            $attendanceSummary['total_days']
-                            ?? 0
-                        ) ?>
-                    </div>
+                    <form
+                        method="POST"
+                        action="/SchoolERP/public/report-card/summary"
+                    >
+
+                        <?= csrf_field() ?>
+
+                        <input
+                            type="hidden"
+                            name="student_id"
+                            value="<?= (int) $student->id ?>"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="academic_session_id"
+                            value="<?= (int) $academicSession->id ?>"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="term_id"
+                            value="<?= (int) $term->id ?>"
+                        >
+
+
+                        <div class="row g-4">
+
+
+                            <!-- Class Teacher Remark -->
+                            <div class="col-md-6">
+
+                                <label
+                                    for="class_teacher_remark"
+                                    class="form-label fw-semibold"
+                                >
+                                    Class Teacher's Remark
+                                </label>
+
+                                <textarea
+                                    id="class_teacher_remark"
+                                    name="class_teacher_remark"
+                                    class="form-control"
+                                    rows="5"
+                                    maxlength="2000"
+                                    placeholder="Enter class teacher's remark..."
+                                ><?= htmlspecialchars(
+                                    $classTeacherRemark,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?></textarea>
+
+                            </div>
+
+
+                            <!-- Principal Remark -->
+                            <div class="col-md-6">
+
+                                <label
+                                    for="principal_remark"
+                                    class="form-label fw-semibold"
+                                >
+                                    Principal / Administrator Remark
+                                </label>
+
+                                <textarea
+                                    id="principal_remark"
+                                    name="principal_remark"
+                                    class="form-control"
+                                    rows="5"
+                                    maxlength="2000"
+                                    <?= $currentRoleId !== 1
+                                        ? 'disabled'
+                                        : '' ?>
+                                    placeholder="Enter principal's remark..."
+                                ><?= htmlspecialchars(
+                                    $principalRemark,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?></textarea>
+
+                                <?php if (
+                                    $currentRoleId !== 1
+                                ): ?>
+
+                                    <div class="form-text">
+                                        Only an administrator can update this remark.
+                                    </div>
+
+                                <?php endif; ?>
+
+                            </div>
+
+
+                            <!-- Promotion Status -->
+                            <div class="col-md-4">
+
+                                <label
+                                    for="promotion_status"
+                                    class="form-label fw-semibold"
+                                >
+                                    Promotion Status
+                                </label>
+
+                                <select
+                                    id="promotion_status"
+                                    name="promotion_status"
+                                    class="form-select"
+                                    <?= $currentRoleId !== 1
+                                        ? 'disabled'
+                                        : '' ?>
+                                >
+
+                                    <option
+                                        value="pending"
+                                        <?= $promotionStatus === 'pending'
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        Pending
+                                    </option>
+
+                                    <option
+                                        value="promoted"
+                                        <?= $promotionStatus === 'promoted'
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        Promoted
+                                    </option>
+
+                                    <option
+                                        value="not_promoted"
+                                        <?= $promotionStatus === 'not_promoted'
+                                            ? 'selected'
+                                            : '' ?>
+                                    >
+                                        Not Promoted
+                                    </option>
+
+                                </select>
+
+                                <?php if (
+                                    $currentRoleId !== 1
+                                ): ?>
+
+                                    <div class="form-text">
+                                        Only an administrator can change promotion status.
+                                    </div>
+
+                                <?php endif; ?>
+
+                            </div>
+
+
+                            <!-- Save -->
+                            <div class="col-md-8 d-flex align-items-end">
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                >
+                                    <i class="bi bi-save me-1"></i>
+                                    Save Report Card Information
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </form>
 
                 </div>
 
-            </div>
 
-            <div class="col-md-2 col-6">
+                <!-- ================================================= -->
+                <!-- FOOTER                                               -->
+                <!-- ================================================= -->
 
-                <div class="border rounded p-3 text-center h-100">
-
-                    <div class="small text-muted">
-                        Present
-                    </div>
-
-                    <div class="fs-4 fw-bold text-success">
-                        <?= (int) (
-                            $attendanceSummary['present']
-                            ?? 0
-                        ) ?>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-2 col-6">
-
-                <div class="border rounded p-3 text-center h-100">
-
-                    <div class="small text-muted">
-                        Absent
-                    </div>
-
-                    <div class="fs-4 fw-bold text-danger">
-                        <?= (int) (
-                            $attendanceSummary['absent']
-                            ?? 0
-                        ) ?>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-2 col-6">
-
-                <div class="border rounded p-3 text-center h-100">
-
-                    <div class="small text-muted">
-                        Late
-                    </div>
-
-                    <div class="fs-4 fw-bold text-warning">
-                        <?= (int) (
-                            $attendanceSummary['late']
-                            ?? 0
-                        ) ?>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-2 col-6">
-
-                <div class="border rounded p-3 text-center h-100">
-
-                    <div class="small text-muted">
-                        Excused
-                    </div>
-
-                    <div class="fs-4 fw-bold">
-                        <?= (int) (
-                            $attendanceSummary['excused']
-                            ?? 0
-                        ) ?>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-2 col-6">
-
-                <div class="border rounded p-3 text-center h-100">
-
-                    <div class="small text-muted">
-                        Attendance Rate
-                    </div>
-
-                    <div class="fs-4 fw-bold">
-                        <?= number_format(
-                            (float) (
-                                $attendanceSummary[
-                                    'attendance_rate'
-                                ] ?? 0
-                            ),
-                            2
-                        ) ?>%
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-<?php endif; ?>
-
-                <div class="text-center text-muted small mt-5">
+                <div class="text-center text-muted small mt-5 pt-4 border-top">
 
                     Generated by SchoolERP
 
@@ -916,9 +1390,21 @@ foreach ($terms as $term) {
 
     <?php else: ?>
 
+        <!-- ========================================================= -->
+        <!-- EMPTY STATE                                                -->
+        <!-- ========================================================= -->
+
         <div class="card shadow-sm">
 
             <div class="card-body text-center py-5">
+
+                <div class="mb-3">
+
+                    <i
+                        class="bi bi-file-earmark-text fs-1 text-muted"
+                    ></i>
+
+                </div>
 
                 <h2 class="h5 mb-2">
                     Generate a Report Card
@@ -936,28 +1422,49 @@ foreach ($terms as $term) {
 
 </div>
 
+
+<!-- ================================================================= -->
+<!-- PRINT STYLES                                                      -->
+<!-- ================================================================= -->
+
 <style>
 @media print {
-    .navbar,
-    .sidebar,
-    .btn,
-    form,
-    .alert,
-    .report-card + * {
-        display: none !important;
-    }
 
     body {
         background: #fff !important;
     }
 
+    .navbar,
+    .sidebar,
+    form,
+    .btn,
+    .alert,
+    .card > .card-header,
+    .report-card + * {
+        display: none !important;
+    }
+
     .container-fluid {
         padding: 0 !important;
+        margin: 0 !important;
     }
 
     .report-card {
-        box-shadow: none !important;
         border: 0 !important;
+        box-shadow: none !important;
+        width: 100% !important;
+    }
+
+    .report-card .card-body {
+        padding: 0 !important;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .border {
+        border-color: #dee2e6 !important;
     }
 }
 </style>

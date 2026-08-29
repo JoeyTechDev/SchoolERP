@@ -13,6 +13,7 @@ use SchoolERP\Repositories\AcademicResultRepository;
 use SchoolERP\Repositories\AcademicSessionRepository;
 use SchoolERP\Repositories\AttendanceRepository;
 use SchoolERP\Repositories\ClassroomRepository;
+use SchoolERP\Repositories\ReportCardSummaryRepository;
 use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Repositories\SubjectRepository;
 use SchoolERP\Repositories\TermRepository;
@@ -29,12 +30,13 @@ final class ReportCardService
         private AcademicSessionRepository $sessions,
         private TermRepository $terms,
         private ClassroomRepository $classrooms,
-        private AttendanceRepository $attendance
+        private AttendanceRepository $attendance,
+        private ReportCardSummaryRepository $summaries
     ) {
     }
 
     /**
-     * Build a student's report card.
+     * Build a complete student report card.
      *
      * @return array{
      *     student: Student,
@@ -54,7 +56,8 @@ final class ReportCardService
      *         late: int,
      *         excused: int,
      *         attendance_rate: float
-     *     }
+     *     },
+     *     report_summary: \SchoolERP\Models\ReportCardSummary|null
      * }
      */
     public function build(
@@ -62,6 +65,11 @@ final class ReportCardService
         int $academicSessionId,
         int $termId
     ): array {
+        /*
+         * --------------------------------------------------------------
+         * Student
+         * --------------------------------------------------------------
+         */
         $student = $this->students->find(
             $studentId
         );
@@ -72,6 +80,11 @@ final class ReportCardService
             );
         }
 
+        /*
+         * --------------------------------------------------------------
+         * Academic session
+         * --------------------------------------------------------------
+         */
         $academicSession = $this->sessions->find(
             $academicSessionId
         );
@@ -82,6 +95,11 @@ final class ReportCardService
             );
         }
 
+        /*
+         * --------------------------------------------------------------
+         * Term
+         * --------------------------------------------------------------
+         */
         $term = $this->terms->find(
             $termId
         );
@@ -93,7 +111,9 @@ final class ReportCardService
         }
 
         /*
-         * Load the student's classroom.
+         * --------------------------------------------------------------
+         * Classroom
+         * --------------------------------------------------------------
          */
         $classroom = null;
 
@@ -111,15 +131,23 @@ final class ReportCardService
         }
 
         /*
-         * Load all subjects so historical results remain
-         * readable after a subject has been deactivated.
+         * --------------------------------------------------------------
+         * Subjects
+         * --------------------------------------------------------------
+         *
+         * Load all subjects so historical results remain readable even
+         * when a subject has subsequently been deactivated.
          */
         $subjects = $this->subjects->allOrdered();
 
         $subjectLookup = [];
 
         foreach ($subjects as $subject) {
-            $subjectLookup[(int) $subject['id']] = [
+            $subjectId = (int) (
+                $subject['id'] ?? 0
+            );
+
+            $subjectLookup[$subjectId] = [
                 'name' => (string) (
                     $subject['name'] ?? ''
                 ),
@@ -131,7 +159,9 @@ final class ReportCardService
         }
 
         /*
-         * Get this student's results.
+         * --------------------------------------------------------------
+         * Academic results
+         * --------------------------------------------------------------
          */
         $records = $this->results->forStudent(
             $studentId,
@@ -142,6 +172,7 @@ final class ReportCardService
         $reportResults = [];
 
         $totalScore = 0;
+
         $resultCount = 0;
 
         foreach ($records as $record) {
@@ -196,6 +227,7 @@ final class ReportCardService
 
             if ($hasTotalScore) {
                 $totalScore += $score;
+
                 $resultCount++;
             }
         }
@@ -208,7 +240,9 @@ final class ReportCardService
             : 0.0;
 
         /*
-         * Calculate class position.
+         * --------------------------------------------------------------
+         * Class ranking
+         * --------------------------------------------------------------
          */
         $ranking = $this->calculateClassRanking(
             $student,
@@ -217,12 +251,24 @@ final class ReportCardService
         );
 
         /*
-         * Get attendance summary from the Attendance module.
-         *
-         * This keeps attendance calculation centralized.
+         * --------------------------------------------------------------
+         * Attendance summary
+         * --------------------------------------------------------------
          */
         $attendanceSummary =
             $this->attendance->summaryForStudent(
+                $studentId,
+                $academicSessionId,
+                $termId
+            );
+
+        /*
+         * --------------------------------------------------------------
+         * Report-card remarks and promotion
+         * --------------------------------------------------------------
+         */
+        $reportSummary =
+            $this->summaries->findForStudent(
                 $studentId,
                 $academicSessionId,
                 $termId
@@ -247,24 +293,28 @@ final class ReportCardService
 
             'position' => $ranking['position'],
 
-            'ranked_students' => $ranking['ranked_students'],
+            'ranked_students' =>
+                $ranking['ranked_students'],
 
-            'attendance_summary' => $attendanceSummary,
+            'attendance_summary' =>
+                $attendanceSummary,
+
+            'report_summary' =>
+                $reportSummary,
         ];
     }
 
     /**
-     * Calculate a student's position within their classroom.
+     * Calculate class position.
      *
-     * Ranking uses competition ranking:
+     * Uses competition ranking:
      *
      * 1st
      * 2nd
      * 2nd
      * 4th
      *
-     * A student must have at least one recorded total score
-     * to participate in the ranking.
+     * Students are ranked only against students in the same classroom.
      *
      * @return array{
      *     position: int|null,
@@ -283,12 +333,10 @@ final class ReportCardService
             ];
         }
 
-        /*
-         * Get students in the same classroom.
-         */
-        $classroomStudents = $this->students->inClassroom(
-            (int) $student->classroom_id
-        );
+        $classroomStudents =
+            $this->students->inClassroom(
+                (int) $student->classroom_id
+            );
 
         if ($classroomStudents === []) {
             return [
@@ -298,16 +346,18 @@ final class ReportCardService
         }
 
         /*
-         * Build a lookup of students who belong to this class.
+         * Build classroom student lookup.
          */
         $studentIds = [];
 
         foreach ($classroomStudents as $classroomStudent) {
-            $studentIds[(int) $classroomStudent['id']] = true;
+            $studentIds[
+                (int) $classroomStudent['id']
+            ] = true;
         }
 
         /*
-         * Get all results for this session and term.
+         * Get all results for the selected session and term.
          */
         $results = $this->results->forSessionAndTerm(
             $academicSessionId,
@@ -315,7 +365,7 @@ final class ReportCardService
         );
 
         /*
-         * Accumulate total marks per student.
+         * Accumulate totals per student.
          */
         $totals = [];
 
@@ -325,34 +375,39 @@ final class ReportCardService
             );
 
             /*
-             * Ignore students outside this classroom.
+             * Ignore students outside the classroom.
              */
-            if (!isset($studentIds[$resultStudentId])) {
+            if (!isset(
+                $studentIds[$resultStudentId]
+            )) {
                 continue;
             }
 
             /*
-             * Ignore results without a total score.
+             * Ignore incomplete results.
              */
             if ($result['total_score'] === null) {
                 continue;
             }
 
-            if (!isset($totals[$resultStudentId])) {
+            if (!isset(
+                $totals[$resultStudentId]
+            )) {
                 $totals[$resultStudentId] = 0;
             }
 
-            $score = (int) $result['total_score'];
-
-            $totals[$resultStudentId] += $score;
+            $totals[$resultStudentId] +=
+                (int) $result['total_score'];
         }
 
         $currentStudentId = (int) $student->id;
 
         /*
-         * A student without academic results cannot be ranked.
+         * A student without results cannot be ranked.
          */
-        if (!isset($totals[$currentStudentId])) {
+        if (!isset(
+            $totals[$currentStudentId]
+        )) {
             return [
                 'position' => null,
                 'ranked_students' => count($totals),
@@ -360,7 +415,7 @@ final class ReportCardService
         }
 
         /*
-         * Highest total score ranks first.
+         * Highest total comes first.
          */
         arsort(
             $totals,
@@ -368,19 +423,16 @@ final class ReportCardService
         );
 
         $position = 0;
+
         $rank = 0;
+
         $previousScore = null;
 
         foreach ($totals as $rankedStudentId => $score) {
             $position++;
 
             /*
-             * Competition ranking:
-             *
-             * 100 → 1
-             * 90  → 2
-             * 90  → 2
-             * 80  → 4
+             * Competition ranking.
              */
             if (
                 $previousScore === null
@@ -390,7 +442,8 @@ final class ReportCardService
             }
 
             if (
-                (int) $rankedStudentId === $currentStudentId
+                (int) $rankedStudentId
+                === $currentStudentId
             ) {
                 return [
                     'position' => $rank,

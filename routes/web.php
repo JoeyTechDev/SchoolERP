@@ -401,6 +401,11 @@ $router->get(
     [AttendanceHistoryController::class, 'index']
 );
 
+$router->post(
+    '/report-card/summary',
+    [ReportCardController::class, 'saveSummary']
+);
+
 /*
 |--------------------------------------------------------------------------
 | CSRF Test Routes
