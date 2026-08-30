@@ -364,4 +364,73 @@ final class ReportCardController extends Controller
             . $termId
         );
     }
+
+/**
+ * Display a clean printable report card.
+ */
+public function print(
+    Request $request
+): Response {
+    $forbidden = $this->requireRole([1, 2]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    $studentId = max(
+        0,
+        (int) $request->get(
+            'student_id',
+            0
+        )
+    );
+
+    $sessionId = max(
+        0,
+        (int) $request->get(
+            'academic_session_id',
+            0
+        )
+    );
+
+    $termId = max(
+        0,
+        (int) $request->get(
+            'term_id',
+            0
+        )
+    );
+
+    if (
+        $studentId <= 0
+        || $sessionId <= 0
+        || $termId <= 0
+    ) {
+        return Response::make(
+            'Student, academic session, and term are required.',
+            400
+        );
+    }
+
+    try {
+        $report = $this->reports->build(
+            $studentId,
+            $sessionId,
+            $termId
+        );
+    } catch (\RuntimeException $exception) {
+        return Response::make(
+            $exception->getMessage(),
+            404
+        );
+    }
+
+    return $this->view(
+        'report-card.print',
+        [
+            'title' => 'Printable Report Card',
+            'report' => $report,
+        ]
+    );
+}
 }

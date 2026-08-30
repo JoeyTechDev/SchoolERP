@@ -368,8 +368,18 @@ $router->post(
 */
 
 $router->get(
+    '/report-card/print',
+    [ReportCardController::class, 'print']
+);
+
+$router->get(
     '/report-card',
     [ReportCardController::class, 'index']
+);
+
+$router->post(
+    '/report-card/summary',
+    [ReportCardController::class, 'saveSummary']
 );
 
 /*
@@ -404,6 +414,11 @@ $router->get(
 $router->post(
     '/report-card/summary',
     [ReportCardController::class, 'saveSummary']
+);
+
+$router->get(
+    '/report-card/print',
+    [ReportCardController::class, 'print']
 );
 
 /*

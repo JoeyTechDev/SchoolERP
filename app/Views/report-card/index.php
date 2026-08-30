@@ -14,6 +14,12 @@ use SchoolERP\Session\SessionInterface;
  * @var int $termId
  */
 
+/*
+|--------------------------------------------------------------------------
+| Safe Defaults
+|--------------------------------------------------------------------------
+*/
+
 $students = $students ?? [];
 $sessions = $sessions ?? [];
 $terms = $terms ?? [];
@@ -38,7 +44,7 @@ $error = $session->flash('error');
 
 /*
 |--------------------------------------------------------------------------
-| Selected filter names
+| Selected Session / Term Labels
 |--------------------------------------------------------------------------
 */
 
@@ -100,14 +106,14 @@ foreach ($terms as $term) {
 
         <?php if ($report !== null): ?>
 
-            <button
-                type="button"
+            <a
+                href="/SchoolERP/public/report-card/print?student_id=<?= (int) $report['student']->id ?>&academic_session_id=<?= (int) $report['academic_session']->id ?>&term_id=<?= (int) $report['term']->id ?>"
                 class="btn btn-outline-secondary"
-                onclick="window.print()"
+                target="_blank"
             >
                 <i class="bi bi-printer me-1"></i>
-                Print
-            </button>
+                Print Report
+            </a>
 
         <?php endif; ?>
 
@@ -214,22 +220,22 @@ foreach ($terms as $term) {
                                 -- Select Student --
                             </option>
 
-                            <?php foreach ($students as $student): ?>
+                            <?php foreach ($students as $item): ?>
 
                                 <?php
 
-                                $id = (int) (
-                                    $student['id'] ?? 0
+                                $itemId = (int) (
+                                    $item['id'] ?? 0
                                 );
 
-                                $name = trim(
+                                $itemName = trim(
                                     (string) (
-                                        $student['first_name']
+                                        $item['first_name']
                                         ?? ''
                                     )
                                     . ' '
                                     . (string) (
-                                        $student['last_name']
+                                        $item['last_name']
                                         ?? ''
                                     )
                                 );
@@ -237,13 +243,13 @@ foreach ($terms as $term) {
                                 ?>
 
                                 <option
-                                    value="<?= $id ?>"
-                                    <?= $studentId === $id
+                                    value="<?= $itemId ?>"
+                                    <?= $studentId === $itemId
                                         ? 'selected'
                                         : '' ?>
                                 >
                                     <?= htmlspecialchars(
-                                        $name,
+                                        $itemName,
                                         ENT_QUOTES,
                                         'UTF-8'
                                     ) ?>
@@ -284,7 +290,7 @@ foreach ($terms as $term) {
 
                                 <?php
 
-                                $id = (int) (
+                                $itemId = (int) (
                                     $academicSession['id']
                                     ?? 0
                                 );
@@ -292,8 +298,8 @@ foreach ($terms as $term) {
                                 ?>
 
                                 <option
-                                    value="<?= $id ?>"
-                                    <?= $sessionId === $id
+                                    value="<?= $itemId ?>"
+                                    <?= $sessionId === $itemId
                                         ? 'selected'
                                         : '' ?>
                                 >
@@ -339,15 +345,15 @@ foreach ($terms as $term) {
 
                                 <?php
 
-                                $id = (int) (
+                                $itemId = (int) (
                                     $term['id'] ?? 0
                                 );
 
                                 ?>
 
                                 <option
-                                    value="<?= $id ?>"
-                                    <?= $termId === $id
+                                    value="<?= $itemId ?>"
+                                    <?= $termId === $itemId
                                         ? 'selected'
                                         : '' ?>
                                 >
@@ -390,24 +396,34 @@ foreach ($terms as $term) {
 
 
     <!-- ============================================================= -->
-    <!-- REPORT CONTENT                                                 -->
+    <!-- REPORT                                                        -->
     <!-- ============================================================= -->
 
     <?php if ($report !== null): ?>
 
         <?php
 
-        $student = $report['student'];
+        /*
+        |--------------------------------------------------------------------------
+        | Report Data
+        |--------------------------------------------------------------------------
+        */
 
-        $classroom = $report['classroom']
+        $student =
+            $report['student'];
+
+        $classroom =
+            $report['classroom']
             ?? null;
 
         $academicSession =
             $report['academic_session'];
 
-        $term = $report['term'];
+        $term =
+            $report['term'];
 
-        $results = $report['results']
+        $results =
+            $report['results']
             ?? [];
 
         $resultCount = (int) (
@@ -425,7 +441,8 @@ foreach ($terms as $term) {
             ?? 0
         );
 
-        $position = $report['position']
+        $position =
+            $report['position']
             ?? null;
 
         $rankedStudents = (int) (
@@ -442,8 +459,11 @@ foreach ($terms as $term) {
             ?? null;
 
         /*
-         * Current role.
-         */
+        |--------------------------------------------------------------------------
+        | Role
+        |--------------------------------------------------------------------------
+        */
+
         $currentRoleId = (int) (
             $session->get(
                 'role_id',
@@ -452,8 +472,11 @@ foreach ($terms as $term) {
         );
 
         /*
-         * Report-card summary values.
-         */
+        |--------------------------------------------------------------------------
+        | Remarks / Promotion
+        |--------------------------------------------------------------------------
+        */
+
         $classTeacherRemark = '';
 
         $principalRemark = '';
@@ -462,25 +485,34 @@ foreach ($terms as $term) {
 
         if ($reportSummary !== null) {
 
-            $classTeacherRemark = (string) (
-                $reportSummary->class_teacher_remark
-                ?? ''
-            );
+            $classTeacherRemark =
+                (string) (
+                    $reportSummary
+                        ->class_teacher_remark
+                    ?? ''
+                );
 
-            $principalRemark = (string) (
-                $reportSummary->principal_remark
-                ?? ''
-            );
+            $principalRemark =
+                (string) (
+                    $reportSummary
+                        ->principal_remark
+                    ?? ''
+                );
 
-            $promotionStatus = (string) (
-                $reportSummary->promotion_status
-                ?? 'pending'
-            );
+            $promotionStatus =
+                (string) (
+                    $reportSummary
+                        ->promotion_status
+                    ?? 'pending'
+                );
         }
 
         /*
-         * Convert position to ordinal.
-         */
+        |--------------------------------------------------------------------------
+        | Position Formatter
+        |--------------------------------------------------------------------------
+        */
+
         $ordinal = static function (
             ?int $value
         ): string {
@@ -499,27 +531,30 @@ foreach ($terms as $term) {
             }
 
             return match ($value % 10) {
+
                 1 => $value . 'st',
+
                 2 => $value . 'nd',
+
                 3 => $value . 'rd',
+
                 default => $value . 'th',
+
             };
         };
 
         ?>
 
-
         <!-- ========================================================= -->
-        <!-- PRINTABLE REPORT CARD                                      -->
+        <!-- REPORT CARD                                                -->
         <!-- ========================================================= -->
 
         <div class="card shadow-sm report-card">
 
             <div class="card-body p-4">
 
-
                 <!-- ================================================= -->
-                <!-- SCHOOL / STUDENT HEADER                            -->
+                <!-- REPORT HEADER                                      -->
                 <!-- ================================================= -->
 
                 <div
@@ -554,6 +589,7 @@ foreach ($terms as $term) {
 
                     </h3>
 
+
                     <?php if ($classroom !== null): ?>
 
                         <div class="fw-semibold mt-2">
@@ -572,6 +608,7 @@ foreach ($terms as $term) {
                         </div>
 
                     <?php endif; ?>
+
 
                     <div class="text-muted mt-1">
 
@@ -744,7 +781,7 @@ foreach ($terms as $term) {
 
                                 <tr>
 
-                                    <th>
+                                    <th style="width: 50px;">
                                         #
                                     </th>
 
@@ -792,8 +829,7 @@ foreach ($terms as $term) {
                                 ?>
 
                                 <?php foreach (
-                                    $results
-                                    as $result
+                                    $results as $result
                                 ): ?>
 
                                     <?php
@@ -833,6 +869,7 @@ foreach ($terms as $term) {
 
                                             </strong>
 
+
                                             <?php if (
                                                 !empty(
                                                     $result[
@@ -859,6 +896,7 @@ foreach ($terms as $term) {
 
                                         </td>
 
+
                                         <td class="text-center">
 
                                             <?= htmlspecialchars(
@@ -873,6 +911,7 @@ foreach ($terms as $term) {
                                             ) ?>
 
                                         </td>
+
 
                                         <td class="text-center">
 
@@ -889,7 +928,10 @@ foreach ($terms as $term) {
 
                                         </td>
 
-                                        <td class="text-center fw-semibold">
+
+                                        <td
+                                            class="text-center fw-semibold"
+                                        >
 
                                             <?= htmlspecialchars(
                                                 (string) (
@@ -903,6 +945,7 @@ foreach ($terms as $term) {
                                             ) ?>
 
                                         </td>
+
 
                                         <td class="text-center">
 
@@ -927,6 +970,7 @@ foreach ($terms as $term) {
                                             <?php endif; ?>
 
                                         </td>
+
 
                                         <td>
 
@@ -1026,7 +1070,9 @@ foreach ($terms as $term) {
                             <div class="fs-4 fw-bold">
 
                                 <?= htmlspecialchars(
-                                    $ordinal($position),
+                                    $ordinal(
+                                        $position
+                                    ),
                                     ENT_QUOTES,
                                     'UTF-8'
                                 ) ?>
@@ -1074,6 +1120,7 @@ foreach ($terms as $term) {
 
                         </div>
 
+
                         <div class="row g-3">
 
                             <div class="col-md-2 col-6">
@@ -1087,11 +1134,13 @@ foreach ($terms as $term) {
                                     </div>
 
                                     <div class="fs-4 fw-bold">
+
                                         <?= (int) (
                                             $attendanceSummary[
                                                 'total_days'
                                             ] ?? 0
                                         ) ?>
+
                                     </div>
 
                                 </div>
@@ -1109,12 +1158,16 @@ foreach ($terms as $term) {
                                         Present
                                     </div>
 
-                                    <div class="fs-4 fw-bold text-success">
+                                    <div
+                                        class="fs-4 fw-bold text-success"
+                                    >
+
                                         <?= (int) (
                                             $attendanceSummary[
                                                 'present'
                                             ] ?? 0
                                         ) ?>
+
                                     </div>
 
                                 </div>
@@ -1132,12 +1185,16 @@ foreach ($terms as $term) {
                                         Absent
                                     </div>
 
-                                    <div class="fs-4 fw-bold text-danger">
+                                    <div
+                                        class="fs-4 fw-bold text-danger"
+                                    >
+
                                         <?= (int) (
                                             $attendanceSummary[
                                                 'absent'
                                             ] ?? 0
                                         ) ?>
+
                                     </div>
 
                                 </div>
@@ -1155,12 +1212,16 @@ foreach ($terms as $term) {
                                         Late
                                     </div>
 
-                                    <div class="fs-4 fw-bold text-warning">
+                                    <div
+                                        class="fs-4 fw-bold text-warning"
+                                    >
+
                                         <?= (int) (
                                             $attendanceSummary[
                                                 'late'
                                             ] ?? 0
                                         ) ?>
+
                                     </div>
 
                                 </div>
@@ -1179,11 +1240,13 @@ foreach ($terms as $term) {
                                     </div>
 
                                     <div class="fs-4 fw-bold">
+
                                         <?= (int) (
                                             $attendanceSummary[
                                                 'excused'
                                             ] ?? 0
                                         ) ?>
+
                                     </div>
 
                                 </div>
@@ -1239,6 +1302,7 @@ foreach ($terms as $term) {
 
                     </div>
 
+
                     <form
                         method="POST"
                         action="/SchoolERP/public/report-card/summary"
@@ -1267,8 +1331,7 @@ foreach ($terms as $term) {
 
                         <div class="row g-4">
 
-
-                            <!-- Class Teacher Remark -->
+                            <!-- Class Teacher -->
                             <div class="col-md-6">
 
                                 <label
@@ -1294,7 +1357,7 @@ foreach ($terms as $term) {
                             </div>
 
 
-                            <!-- Principal Remark -->
+                            <!-- Principal -->
                             <div class="col-md-6">
 
                                 <label
@@ -1333,7 +1396,7 @@ foreach ($terms as $term) {
                             </div>
 
 
-                            <!-- Promotion Status -->
+                            <!-- Promotion -->
                             <div class="col-md-4">
 
                                 <label
@@ -1395,7 +1458,9 @@ foreach ($terms as $term) {
 
 
                             <!-- Save -->
-                            <div class="col-md-8 d-flex align-items-end">
+                            <div
+                                class="col-md-8 d-flex align-items-end"
+                            >
 
                                 <button
                                     type="submit"
@@ -1415,20 +1480,19 @@ foreach ($terms as $term) {
 
 
                 <!-- ================================================= -->
-                <!-- REPORT FOOTER                                       -->
+                <!-- FOOTER                                              -->
                 <!-- ================================================= -->
 
                 <div
                     class="text-center text-muted small mt-5 pt-4 border-top"
                 >
-
                     Generated by SchoolERP
-
                 </div>
 
             </div>
 
         </div>
+
 
     <?php else: ?>
 
@@ -1478,7 +1542,7 @@ foreach ($terms as $term) {
     }
 
     /*
-     * Hide administrative controls.
+     * Hide the administrative controls.
      */
     .navbar,
     .sidebar,
@@ -1491,7 +1555,7 @@ foreach ($terms as $term) {
     }
 
     /*
-     * Preserve the actual report.
+     * Keep the actual report visible.
      */
     .container-fluid {
         padding: 0 !important;
@@ -1516,12 +1580,6 @@ foreach ($terms as $term) {
         border-color: #dee2e6 !important;
     }
 
-    /*
-     * Make sure printed report sections remain visible.
-     */
-    .report-card .card-body > * {
-        visibility: visible;
-    }
-
 }
+
 </style>
