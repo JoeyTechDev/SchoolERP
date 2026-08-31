@@ -9,6 +9,9 @@ use SchoolERP\Query\Pagination\Paginator;
 
 final class StudentRepository extends Repository
 {
+    /**
+     * Constructor.
+     */
     public function __construct()
     {
         parent::__construct(
@@ -25,13 +28,17 @@ final class StudentRepository extends Repository
         int $classroomId
     ): array {
         return $this->model
-            ->scope('inClassroom', $classroomId)
+            ->scope(
+                'inClassroom',
+                $classroomId
+            )
             ->query()
             ->get();
     }
 
     /**
-     * Get all students ordered by last name and first name.
+     * Get all students ordered by last name
+     * and first name.
      *
      * @return array<int,array<string,mixed>>
      */
@@ -39,8 +46,14 @@ final class StudentRepository extends Repository
     {
         return $this->model
             ->query()
-            ->orderBy('last_name', 'ASC')
-            ->orderBy('first_name', 'ASC')
+            ->orderBy(
+                'last_name',
+                'ASC'
+            )
+            ->orderBy(
+                'first_name',
+                'ASC'
+            )
             ->get();
     }
 
@@ -64,8 +77,8 @@ final class StudentRepository extends Repository
     }
 
     /**
-     * Search students by first name or last name
-     * and return paginated results.
+     * Search students by admission number,
+     * first name, or last name.
      */
     public function searchPaginated(
         string $search,
@@ -77,11 +90,31 @@ final class StudentRepository extends Repository
         $query = $this->model->query();
 
         if ($search !== '') {
+
             $pattern = '%' . $search . '%';
 
+            /*
+             * The search should match any of:
+             *
+             * admission_number
+             * first_name
+             * last_name
+             */
             $query
-                ->whereLike('first_name', $pattern)
-                ->orWhere('last_name', 'LIKE', $pattern);
+                ->whereLike(
+                    'admission_number',
+                    $pattern
+                )
+                ->orWhere(
+                    'first_name',
+                    'LIKE',
+                    $pattern
+                )
+                ->orWhere(
+                    'last_name',
+                    'LIKE',
+                    $pattern
+                );
         }
 
         $pagination = $query->paginate(
@@ -103,10 +136,16 @@ final class StudentRepository extends Repository
         $items = $pagination->items();
 
         foreach ($items as &$student) {
-            $classroomId = $student['classroom_id'] ?? null;
+
+            $classroomId =
+                $student['classroom_id']
+                ?? null;
 
             if ($classroomId === null) {
-                $student['classroom_name'] = null;
+
+                $student['classroom_name'] =
+                    null;
+
                 continue;
             }
 
@@ -118,9 +157,10 @@ final class StudentRepository extends Repository
                 ? $model->classroom()->get()
                 : null;
 
-            $student['classroom_name'] = $classroom !== null
-                ? $classroom->name
-                : null;
+            $student['classroom_name'] =
+                $classroom !== null
+                    ? $classroom->name
+                    : null;
         }
 
         unset($student);

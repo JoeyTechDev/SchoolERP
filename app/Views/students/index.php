@@ -5,15 +5,127 @@ declare(strict_types=1);
 /**
  * @var array<int,array<string,mixed>> $students
  * @var \SchoolERP\Query\Pagination\Paginator $pagination
+ * @var string $search
  */
+
+$students = $students ?? [];
+
+$search = trim(
+    (string) (
+        $search ?? ''
+    )
+);
+
+$totalStudents = $pagination->total();
+
+$currentPage = $pagination->currentPage();
+
+$lastPage = $pagination->lastPage();
+
+/*
+|--------------------------------------------------------------------------
+| Pagination URL helper
+|--------------------------------------------------------------------------
+|
+| Preserve the active search query while moving between pages.
+|
+*/
+
+$pageUrl = static function (
+    int $page
+) use (
+    $search
+): string {
+    $query = [
+        'page' => $page,
+    ];
+
+    if ($search !== '') {
+        $query['q'] = $search;
+    }
+
+    return '/SchoolERP/public/students?'
+        . http_build_query($query);
+};
+
+/*
+|--------------------------------------------------------------------------
+| Date formatter
+|--------------------------------------------------------------------------
+*/
+
+$formatDate = static function (
+    mixed $value
+): string {
+
+    if ($value === null || $value === '') {
+        return '—';
+    }
+
+    if (
+        $value instanceof \DateTimeInterface
+    ) {
+        return $value->format('d M Y');
+    }
+
+    $value = trim(
+        (string) $value
+    );
+
+    if ($value === '') {
+        return '—';
+    }
+
+    $timestamp = strtotime($value);
+
+    if ($timestamp === false) {
+        return $value;
+    }
+
+    return date(
+        'd M Y',
+        $timestamp
+    );
+};
+
+/*
+|--------------------------------------------------------------------------
+| Gender formatter
+|--------------------------------------------------------------------------
+*/
+
+$formatGender = static function (
+    mixed $value
+): string {
+
+    return match (
+        strtolower(
+            trim(
+                (string) $value
+            )
+        )
+    ) {
+        'male' => 'Male',
+        'female' => 'Female',
+        'other' => 'Other',
+        default => '—',
+    };
+};
+
 ?>
 
 <div class="container-fluid py-4">
 
-    <!-- Page Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <!-- ============================================================= -->
+    <!-- PAGE HEADER                                                    -->
+    <!-- ============================================================= -->
+
+    <div
+        class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4"
+    >
 
         <div>
+
             <h1 class="h3 fw-bold mb-1">
                 Students
             </h1>
@@ -21,25 +133,36 @@ declare(strict_types=1);
             <p class="text-muted mb-0">
                 Manage students enrolled in the school.
             </p>
+
         </div>
+
 
         <a
             href="/SchoolERP/public/students/create"
             class="btn btn-primary"
         >
-            + Add Student
+            <i class="bi bi-person-plus me-1"></i>
+            Add Student
         </a>
 
     </div>
 
 
-    <!-- Student Directory Card -->
+    <!-- ============================================================= -->
+    <!-- DIRECTORY CARD                                                 -->
+    <!-- ============================================================= -->
+
     <div class="card border-0 shadow-sm">
 
-        <!-- Card Header -->
+        <!-- ========================================================= -->
+        <!-- CARD HEADER                                                 -->
+        <!-- ========================================================= -->
+
         <div class="card-header bg-white border-bottom py-3">
 
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+            <div
+                class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3"
+            >
 
                 <div>
 
@@ -49,9 +172,13 @@ declare(strict_types=1);
 
                     <p class="text-muted small mb-0">
 
-                        <?= number_format($pagination->total()) ?>
+                        <?= number_format(
+                            $totalStudents
+                        ) ?>
 
-                        student<?= $pagination->total() === 1 ? '' : 's' ?>
+                        student<?= $totalStudents === 1
+                            ? ''
+                            : 's' ?>
 
                         registered
 
@@ -60,83 +187,148 @@ declare(strict_types=1);
                 </div>
 
 
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                <!-- Search -->
+                <form
+                    method="GET"
+                    action="/SchoolERP/public/students"
+                    class="d-flex"
+                    role="search"
+                >
 
-    <form
-        method="GET"
-        action="/SchoolERP/public/students"
-        class="d-flex"
-    >
+                    <div class="input-group">
 
-        <input
-            type="search"
-            name="q"
-            value="<?= htmlspecialchars(
-                $search ?? '',
-                ENT_QUOTES,
-                'UTF-8'
-            ) ?>"
-            class="form-control form-control-sm"
-            placeholder="Search students..."
-            aria-label="Search students"
-        >
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
 
-        <button
-            type="submit"
-            class="btn btn-sm btn-primary ms-2"
-        >
-            Search
-        </button>
+                        <input
+                            type="search"
+                            name="q"
+                            value="<?= htmlspecialchars(
+                                $search,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                            class="form-control"
+                            placeholder="Search admission no. or name..."
+                            aria-label="Search students"
+                        >
 
-        <?php if (!empty($search)): ?>
+                        <?php if ($search !== ''): ?>
 
-            <a
-                href="/SchoolERP/public/students"
-                class="btn btn-sm btn-outline-secondary ms-2"
-            >
-                Clear
-            </a>
+                            <a
+                                href="/SchoolERP/public/students"
+                                class="btn btn-outline-secondary"
+                                title="Clear search"
+                            >
+                                <i class="bi bi-x-lg"></i>
+                            </a>
 
-        <?php endif; ?>
+                        <?php endif; ?>
 
-    </form>
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Search
+                        </button>
 
-</div>
+                    </div>
+
+                </form>
 
             </div>
+
+
+            <?php if ($search !== ''): ?>
+
+                <div class="mt-3">
+
+                    <span class="badge text-bg-light border">
+
+                        Search:
+                        <strong>
+                            <?= htmlspecialchars(
+                                $search,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </strong>
+
+                    </span>
+
+                </div>
+
+            <?php endif; ?>
 
         </div>
 
 
-        <!-- Table -->
+        <!-- ========================================================= -->
+        <!-- TABLE                                                       -->
+        <!-- ========================================================= -->
+
         <div class="card-body p-0">
 
             <?php if (empty($students)): ?>
 
-                <div class="text-center py-5">
+                <div class="text-center py-5 px-3">
 
                     <div class="mb-3">
 
-                        <span class="fs-1">
-                            👨‍🎓
-                        </span>
+                        <i
+                            class="bi bi-people fs-1 text-muted"
+                            aria-hidden="true"
+                        ></i>
 
                     </div>
 
-                    <h5 class="fw-semibold">
-                        No students found
-                    </h5>
 
-                    <p class="text-muted mb-3">
-                        There are currently no students registered.
-                    </p>
+                    <?php if ($search !== ''): ?>
 
-                    <a
-                        href="/SchoolERP/public/students/create"
-                        class="btn btn-primary"
-                    >
-                        Add First Student
-                    </a>
+                        <h5 class="fw-semibold">
+                            No students found
+                        </h5>
+
+                        <p class="text-muted mb-3">
+
+                            No student matches
+                            <strong>
+                                "<?= htmlspecialchars(
+                                    $search,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>"
+                            </strong>.
+
+                        </p>
+
+                        <a
+                            href="/SchoolERP/public/students"
+                            class="btn btn-outline-secondary"
+                        >
+                            Clear Search
+                        </a>
+
+                    <?php else: ?>
+
+                        <h5 class="fw-semibold">
+                            No students found
+                        </h5>
+
+                        <p class="text-muted mb-3">
+                            There are currently no students registered.
+                        </p>
+
+                        <a
+                            href="/SchoolERP/public/students/create"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-person-plus me-1"></i>
+                            Add First Student
+                        </a>
+
+                    <?php endif; ?>
 
                 </div>
 
@@ -144,7 +336,9 @@ declare(strict_types=1);
 
                 <div class="table-responsive">
 
-                    <table class="table table-hover align-middle mb-0">
+                    <table
+                        class="table table-hover align-middle mb-0"
+                    >
 
                         <thead class="table-light">
 
@@ -153,27 +347,50 @@ declare(strict_types=1);
                                 <th
                                     scope="col"
                                     class="px-4"
-                                    style="width: 80px;"
+                                    style="width: 70px;"
                                 >
                                     ID
                                 </th>
 
-                                <th scope="col">
-                                    First Name
+                                <th
+                                    scope="col"
+                                    style="min-width: 140px;"
+                                >
+                                    Admission No.
                                 </th>
 
-                                <th scope="col">
-                                    Last Name
+                                <th
+                                    scope="col"
+                                    style="min-width: 180px;"
+                                >
+                                    Student
                                 </th>
 
-                                <th scope="col">
+                                <th
+                                    scope="col"
+                                    style="width: 110px;"
+                                >
+                                    Gender
+                                </th>
+
+                                <th
+                                    scope="col"
+                                    style="min-width: 140px;"
+                                >
+                                    Date of Birth
+                                </th>
+
+                                <th
+                                    scope="col"
+                                    style="min-width: 150px;"
+                                >
                                     Classroom
                                 </th>
 
                                 <th
                                     scope="col"
                                     class="text-end px-4"
-                                    style="width: 180px;"
+                                    style="width: 190px;"
                                 >
                                     Actions
                                 </th>
@@ -185,41 +402,170 @@ declare(strict_types=1);
 
                         <tbody>
 
-                            <?php foreach ($students as $student): ?>
+                            <?php foreach (
+                                $students
+                                as $student
+                            ): ?>
+
+                                <?php
+
+                                $studentId = (int) (
+                                    $student['id'] ?? 0
+                                );
+
+                                $firstName = trim(
+                                    (string) (
+                                        $student['first_name']
+                                        ?? ''
+                                    )
+                                );
+
+                                $lastName = trim(
+                                    (string) (
+                                        $student['last_name']
+                                        ?? ''
+                                    )
+                                );
+
+                                $fullName = trim(
+                                    $firstName
+                                    . ' '
+                                    . $lastName
+                                );
+
+                                $admissionNumber = trim(
+                                    (string) (
+                                        $student[
+                                            'admission_number'
+                                        ]
+                                        ?? ''
+                                    )
+                                );
+
+                                $gender = $formatGender(
+                                    $student['gender'] ?? null
+                                );
+
+                                $dateOfBirth = $formatDate(
+                                    $student[
+                                        'date_of_birth'
+                                    ] ?? null
+                                );
+
+                                /*
+                                 * Prefer the classroom name supplied by
+                                 * StudentRepository. Fall back to the ID
+                                 * when only classroom_id is available.
+                                 */
+                                $classroomName = trim(
+                                    (string) (
+                                        $student[
+                                            'classroom_name'
+                                        ]
+                                        ?? ''
+                                    )
+                                );
+
+                                $classroomId = $student[
+                                    'classroom_id'
+                                ] ?? null;
+
+                                if (
+                                    $classroomName === ''
+                                ) {
+                                    if (
+                                        $classroomId !== null
+                                        && $classroomId !== ''
+                                    ) {
+                                        $classroomName =
+                                            'Classroom #'
+                                            . (int) $classroomId;
+                                    } else {
+                                        $classroomName =
+                                            'Not assigned';
+                                    }
+                                }
+
+                                ?>
+
 
                                 <tr>
 
-                                    <!-- ID -->
+                                    <!-- ================================================= -->
+                                    <!-- ID                                                -->
+                                    <!-- ================================================= -->
+
                                     <td class="px-4">
 
                                         <span class="text-muted">
-                                            #<?= (int) $student['id'] ?>
+                                            #<?= $studentId ?>
                                         </span>
 
                                     </td>
 
 
-                                    <!-- First Name -->
+                                    <!-- ================================================= -->
+                                    <!-- ADMISSION NUMBER                                  -->
+                                    <!-- ================================================= -->
+
                                     <td>
 
-                                        <span class="fw-semibold">
+                                        <?php if (
+                                            $admissionNumber !== ''
+                                        ): ?>
+
+                                            <span
+                                                class="badge text-bg-light border fw-semibold"
+                                            >
+
+                                                <?= htmlspecialchars(
+                                                    $admissionNumber,
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ) ?>
+
+                                            </span>
+
+                                        <?php else: ?>
+
+                                            <span class="text-muted">
+                                                Not assigned
+                                            </span>
+
+                                        <?php endif; ?>
+
+                                    </td>
+
+
+                                    <!-- ================================================= -->
+                                    <!-- STUDENT                                           -->
+                                    <!-- ================================================= -->
+
+                                    <td>
+
+                                        <div class="fw-semibold">
 
                                             <?= htmlspecialchars(
-                                                (string) $student['first_name'],
+                                                $fullName !== ''
+                                                    ? $fullName
+                                                    : 'Unnamed Student',
                                                 ENT_QUOTES,
                                                 'UTF-8'
                                             ) ?>
 
-                                        </span>
+                                        </div>
 
                                     </td>
 
 
-                                    <!-- Last Name -->
+                                    <!-- ================================================= -->
+                                    <!-- GENDER                                            -->
+                                    <!-- ================================================= -->
+
                                     <td>
 
                                         <?= htmlspecialchars(
-                                            (string) $student['last_name'],
+                                            $gender,
                                             ENT_QUOTES,
                                             'UTF-8'
                                         ) ?>
@@ -227,76 +573,93 @@ declare(strict_types=1);
                                     </td>
 
 
-                                    <!-- Classroom -->
+                                    <!-- ================================================= -->
+                                    <!-- DATE OF BIRTH                                     -->
+                                    <!-- ================================================= -->
 
-<td>
+                                    <td>
 
-<?php
-$classroomName = $student['classroom_name'] ?? null;
-?>
+                                        <?= htmlspecialchars(
+                                            $dateOfBirth,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
 
-<?php if ($classroomName !== null): ?>
-
-    <span class="badge text-bg-light border">
-
-        <?= htmlspecialchars(
-            (string) $classroomName,
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
-
-    </span>
-
-<?php else: ?>
-
-    <span class="text-muted">
-        Not assigned
-    </span>
-
-<?php endif; ?>
-
-</td>
+                                    </td>
 
 
-                                    <!-- Actions -->
-<td class="text-end px-4">
+                                    <!-- ================================================= -->
+                                    <!-- CLASSROOM                                         -->
+                                    <!-- ================================================= -->
 
-    <div class="btn-group" role="group">
+                                    <td>
 
-        <a
-            href="/SchoolERP/public/students/<?= (int) $student['id'] ?>"
-            class="btn btn-sm btn-outline-primary"
-        >
-            View
-        </a>
+                                        <?php if (
+                                            $classroomName
+                                            !== 'Not assigned'
+                                        ): ?>
 
-        <a
-            href="/SchoolERP/public/students/<?= (int) $student['id'] ?>/edit"
-            class="btn btn-sm btn-outline-secondary"
-        >
-            Edit
-        </a>
+                                            <span
+                                                class="badge text-bg-light border"
+                                            >
 
-        <form
-            method="POST"
-            action="/SchoolERP/public/students/<?= (int) $student['id'] ?>/delete"
-            class="d-inline"
-            onsubmit="return confirm('Are you sure you want to delete this student?');"
-        >
-            <?= csrf_field() ?>
+                                                <?= htmlspecialchars(
+                                                    $classroomName,
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ) ?>
 
-            <button
-                type="submit"
-                class="btn btn-sm btn-outline-danger"
-            >
-                Delete
-            </button>
-        </form>
+                                            </span>
 
-    </div>
+                                        <?php else: ?>
 
-</td>
-                                    
+                                            <span class="text-muted">
+                                                Not assigned
+                                            </span>
+
+                                        <?php endif; ?>
+
+                                    </td>
+
+
+                                    <!-- ================================================= -->
+                                    <!-- ACTIONS                                            -->
+                                    <!-- ================================================= -->
+
+                                    <td class="text-end px-4">
+
+                                        <div
+                                            class="btn-group"
+                                            role="group"
+                                            aria-label="Student actions"
+                                        >
+
+                                            <a
+                                                href="/SchoolERP/public/students/<?= $studentId ?>"
+                                                class="btn btn-sm btn-outline-primary"
+                                                title="View Student"
+                                            >
+                                                <i class="bi bi-eye"></i>
+                                                <span class="d-none d-xl-inline ms-1">
+                                                    View
+                                                </span>
+                                            </a>
+
+
+                                            <a
+                                                href="/SchoolERP/public/students/<?= $studentId ?>/edit"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Edit Student"
+                                            >
+                                                <i class="bi bi-pencil"></i>
+                                                <span class="d-none d-xl-inline ms-1">
+                                                    Edit
+                                                </span>
+                                            </a>
+
+                                        </div>
+
+                                    </td>
 
                                 </tr>
 
@@ -313,12 +676,17 @@ $classroomName = $student['classroom_name'] ?? null;
         </div>
 
 
-        <!-- Footer / Pagination -->
-        <?php if ($pagination->total() > 0): ?>
+        <!-- ========================================================= -->
+        <!-- PAGINATION                                                 -->
+        <!-- ========================================================= -->
+
+        <?php if ($totalStudents > 0): ?>
 
             <div class="card-footer bg-white border-top">
 
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div
+                    class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"
+                >
 
                     <!-- Showing -->
                     <div class="text-muted small">
@@ -338,7 +706,9 @@ $classroomName = $student['classroom_name'] ?? null;
                         of
 
                         <strong>
-                            <?= $pagination->total() ?>
+                            <?= number_format(
+                                $totalStudents
+                            ) ?>
                         </strong>
 
                         students
@@ -346,35 +716,72 @@ $classroomName = $student['classroom_name'] ?? null;
                     </div>
 
 
-                    <!-- Pagination -->
-                    <?php if ($pagination->lastPage() > 1): ?>
+                    <!-- Page indicator -->
+                    <div class="text-muted small">
 
-                        <nav aria-label="Student pagination">
+                        Page
+
+                        <strong>
+                            <?= $currentPage ?>
+                        </strong>
+
+                        of
+
+                        <strong>
+                            <?= $lastPage ?>
+                        </strong>
+
+                    </div>
+
+
+                    <?php if ($lastPage > 1): ?>
+
+                        <nav
+                            aria-label="Student pagination"
+                        >
 
                             <ul class="pagination pagination-sm mb-0">
 
-                                <!-- Previous -->
+
+                                <!-- ================================================= -->
+                                <!-- PREVIOUS                                            -->
+                                <!-- ================================================= -->
+
                                 <li
-                                    class="page-item
-                                    <?= !$pagination->hasPreviousPage()
+                                    class="page-item <?= !$pagination->hasPreviousPage()
                                         ? 'disabled'
                                         : '' ?>"
                                 >
 
-                                    <?php if ($pagination->hasPreviousPage()): ?>
+                                    <?php if (
+                                        $pagination->hasPreviousPage()
+                                    ): ?>
 
                                         <a
                                             class="page-link"
-                                            href="/SchoolERP/public/students?page=<?= $pagination->previousPage() ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
+                                            href="<?= htmlspecialchars(
+                                                $pageUrl(
+                                                    $pagination->previousPage()
+                                                ),
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>"
                                             aria-label="Previous"
                                         >
-                                            &laquo;
+                                            <i
+                                                class="bi bi-chevron-left"
+                                            ></i>
                                         </a>
 
                                     <?php else: ?>
 
-                                        <span class="page-link">
-                                            &laquo;
+                                        <span
+                                            class="page-link"
+                                            aria-hidden="true"
+                                        >
+                                            <i
+                                                class="bi bi-chevron-left"
+                                            ></i>
                                         </span>
 
                                     <?php endif; ?>
@@ -382,25 +789,83 @@ $classroomName = $student['classroom_name'] ?? null;
                                 </li>
 
 
-                                <!-- Page Numbers -->
+                                <!-- ================================================= -->
+                                <!-- PAGE NUMBERS                                       -->
+                                <!-- ================================================= -->
+
+                                <?php
+
+                                $startPage = max(
+                                    1,
+                                    $currentPage - 2
+                                );
+
+                                $endPage = min(
+                                    $lastPage,
+                                    $currentPage + 2
+                                );
+
+                                ?>
+
+                                <?php if (
+                                    $startPage > 1
+                                ): ?>
+
+                                    <li class="page-item">
+
+                                        <a
+                                            class="page-link"
+                                            href="<?= htmlspecialchars(
+                                                $pageUrl(1),
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>"
+                                        >
+                                            1
+                                        </a>
+
+                                    </li>
+
+
+                                    <?php if (
+                                        $startPage > 2
+                                    ): ?>
+
+                                        <li
+                                            class="page-item disabled"
+                                        >
+
+                                            <span class="page-link">
+                                                …
+                                            </span>
+
+                                        </li>
+
+                                    <?php endif; ?>
+
+                                <?php endif; ?>
+
+
                                 <?php for (
-                                    $page = 1;
-                                    $page <= $pagination->lastPage();
+                                    $page = $startPage;
+                                    $page <= $endPage;
                                     $page++
                                 ): ?>
 
                                     <li
-                                        class="page-item
-                                        <?= $page === $pagination->currentPage()
+                                        class="page-item <?= $page === $currentPage
                                             ? 'active'
                                             : '' ?>"
                                     >
 
                                         <?php if (
-                                            $page === $pagination->currentPage()
+                                            $page === $currentPage
                                         ): ?>
 
-                                            <span class="page-link">
+                                            <span
+                                                class="page-link"
+                                                aria-current="page"
+                                            >
                                                 <?= $page ?>
                                             </span>
 
@@ -408,7 +873,11 @@ $classroomName = $student['classroom_name'] ?? null;
 
                                             <a
                                                 class="page-link"
-                                                href="/SchoolERP/public/students?page=<?= $page ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
+                                                href="<?= htmlspecialchars(
+                                                    $pageUrl($page),
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ) ?>"
                                             >
                                                 <?= $page ?>
                                             </a>
@@ -420,28 +889,85 @@ $classroomName = $student['classroom_name'] ?? null;
                                 <?php endfor; ?>
 
 
-                                <!-- Next -->
+                                <?php if (
+                                    $endPage < $lastPage
+                                ): ?>
+
+                                    <?php if (
+                                        $endPage
+                                        < $lastPage - 1
+                                    ): ?>
+
+                                        <li
+                                            class="page-item disabled"
+                                        >
+
+                                            <span class="page-link">
+                                                …
+                                            </span>
+
+                                        </li>
+
+                                    <?php endif; ?>
+
+
+                                    <li class="page-item">
+
+                                        <a
+                                            class="page-link"
+                                            href="<?= htmlspecialchars(
+                                                $pageUrl($lastPage),
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>"
+                                        >
+                                            <?= $lastPage ?>
+                                        </a>
+
+                                    </li>
+
+                                <?php endif; ?>
+
+
+                                <!-- ================================================= -->
+                                <!-- NEXT                                                -->
+                                <!-- ================================================= -->
+
                                 <li
-                                    class="page-item
-                                    <?= !$pagination->hasMorePages()
+                                    class="page-item <?= !$pagination->hasMorePages()
                                         ? 'disabled'
                                         : '' ?>"
                                 >
 
-                                    <?php if ($pagination->hasMorePages()): ?>
+                                    <?php if (
+                                        $pagination->hasMorePages()
+                                    ): ?>
 
                                         <a
                                             class="page-link"
-                                            href="/SchoolERP/public/students?page=<?= $pagination->nextPage() ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
+                                            href="<?= htmlspecialchars(
+                                                $pageUrl(
+                                                    $pagination->nextPage()
+                                                ),
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>"
                                             aria-label="Next"
                                         >
-                                            &raquo;
+                                            <i
+                                                class="bi bi-chevron-right"
+                                            ></i>
                                         </a>
 
                                     <?php else: ?>
 
-                                        <span class="page-link">
-                                            &raquo;
+                                        <span
+                                            class="page-link"
+                                            aria-hidden="true"
+                                        >
+                                            <i
+                                                class="bi bi-chevron-right"
+                                            ></i>
                                         </span>
 
                                     <?php endif; ?>
