@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SchoolERP\Controllers;
 
+use PDOException;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
 use SchoolERP\Repositories\ClassroomRepository;
@@ -67,11 +68,17 @@ final class StudentController extends Controller
 
         $page = max(
             1,
-            (int) $request->get('page', 1)
+            (int) $request->get(
+                'page',
+                1
+            )
         );
 
         $search = trim(
-            (string) $request->get('q', '')
+            (string) $request->get(
+                'q',
+                ''
+            )
         );
 
         if ($search !== '') {
@@ -109,7 +116,9 @@ final class StudentController extends Controller
             return $forbidden;
         }
 
-        $student = $this->students->find($id);
+        $student = $this->students->find(
+            $id
+        );
 
         if ($student === null) {
             return Response::notFound();
@@ -136,7 +145,7 @@ final class StudentController extends Controller
      */
     public function create(): Response
     {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
@@ -159,41 +168,183 @@ final class StudentController extends Controller
     public function store(
         Request $request
     ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
         }
 
-        $classroomId = $request->input(
-            'classroom_id'
+        /*
+         * --------------------------------------------------------------
+         * Read input
+         * --------------------------------------------------------------
+         */
+
+        $admissionNumber = strtoupper(
+            trim(
+                (string) $request->input(
+                    'admission_number',
+                    ''
+                )
+            )
         );
 
-        $data = [
-            'first_name' => trim(
-                (string) $request->input('first_name')
-            ),
+        $firstName = trim(
+            (string) $request->input(
+                'first_name',
+                ''
+            )
+        );
 
-            'last_name' => trim(
-                (string) $request->input('last_name')
-            ),
+        $lastName = trim(
+            (string) $request->input(
+                'last_name',
+                ''
+            )
+        );
 
-            'classroom_id' => $classroomId === null
-                || trim((string) $classroomId) === ''
+        $dateOfBirth = trim(
+            (string) $request->input(
+                'date_of_birth',
+                ''
+            )
+        );
+
+        $gender = strtolower(
+            trim(
+                (string) $request->input(
+                    'gender',
+                    ''
+                )
+            )
+        );
+
+        $classroomId = $request->input(
+            'classroom_id',
+            ''
+        );
+
+        $classroomId =
+            trim((string) $classroomId) === ''
                 ? null
-                : (string) $classroomId,
+                : (int) $classroomId;
+
+        /*
+         * --------------------------------------------------------------
+         * Prepare data
+         * --------------------------------------------------------------
+         */
+
+        $data = [
+            'admission_number' =>
+                $admissionNumber !== ''
+                    ? $admissionNumber
+                    : null,
+
+            'first_name' =>
+                $firstName,
+
+            'last_name' =>
+                $lastName,
+
+            'date_of_birth' =>
+                $dateOfBirth !== ''
+                    ? $dateOfBirth
+                    : null,
+
+            'gender' =>
+                $gender !== ''
+                    ? $gender
+                    : null,
+
+            'classroom_id' =>
+                $classroomId,
         ];
+
+        /*
+         * --------------------------------------------------------------
+         * Validation
+         * --------------------------------------------------------------
+         */
 
         $validator = Validator::make(
             $data,
             [
-                'first_name' => 'required|min:2|max:100',
-                'last_name' => 'required|min:2|max:100',
-                'classroom_id' => 'nullable|integer|min:1',
+                'admission_number' =>
+                    'required|min:2|max:50',
+
+                'first_name' =>
+                    'required|min:2|max:100',
+
+                'last_name' =>
+                    'required|min:2|max:100',
+
+                'classroom_id' =>
+                    'nullable|integer|min:1',
             ]
         );
 
-        if ($validator->fails()) {
+        $manualErrors = [];
+
+        /*
+         * Validate gender.
+         */
+        if (
+            $gender !== ''
+            && !in_array(
+                $gender,
+                [
+                    'male',
+                    'female',
+                    'other',
+                ],
+                true
+            )
+        ) {
+            $manualErrors['gender'] =
+                'Please select a valid gender.';
+        }
+
+        /*
+         * Validate date of birth.
+         */
+        if ($dateOfBirth !== '') {
+            $date = \DateTime::createFromFormat(
+                'Y-m-d',
+                $dateOfBirth
+            );
+
+            if (
+                $date === false
+                || $date->format('Y-m-d')
+                    !== $dateOfBirth
+            ) {
+                $manualErrors['date_of_birth'] =
+                    'Please enter a valid date of birth.';
+            }
+        }
+
+        /*
+         * Validate classroom.
+         */
+        if ($classroomId !== null) {
+            $classroom = $this->classrooms->find(
+                $classroomId
+            );
+
+            if ($classroom === null) {
+                $manualErrors['classroom_id'] =
+                    'Selected classroom does not exist.';
+            }
+        }
+
+        /*
+         * Return validation errors.
+         */
+        if (
+            $validator->fails()
+            || $manualErrors !== []
+        ) {
             $this->session->flash(
                 '_old_input',
                 $data
@@ -201,7 +352,10 @@ final class StudentController extends Controller
 
             $this->session->flash(
                 '_errors',
-                $validator->errors()
+                array_merge(
+                    $validator->errors(),
+                    $manualErrors
+                )
             );
 
             return $this->redirect(
@@ -209,9 +363,43 @@ final class StudentController extends Controller
             );
         }
 
-        $this->students->create(
-            $data
-        );
+        /*
+         * --------------------------------------------------------------
+         * Save
+         * --------------------------------------------------------------
+         */
+
+        try {
+            $this->students->create(
+                $data
+            );
+        } catch (PDOException $exception) {
+
+            if (
+                $this->isDuplicateAdmissionException(
+                    $exception
+                )
+            ) {
+                $this->session->flash(
+                    '_old_input',
+                    $data
+                );
+
+                $this->session->flash(
+                    '_errors',
+                    [
+                        'admission_number' =>
+                            'This admission number is already assigned to another student.',
+                    ]
+                );
+
+                return $this->redirect(
+                    '/SchoolERP/public/students/create'
+                );
+            }
+
+            throw $exception;
+        }
 
         $this->session->flash(
             'success',
@@ -229,13 +417,15 @@ final class StudentController extends Controller
     public function edit(
         int $id
     ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
         }
 
-        $student = $this->students->find($id);
+        $student = $this->students->find(
+            $id
+        );
 
         if ($student === null) {
             return Response::notFound();
@@ -260,47 +450,191 @@ final class StudentController extends Controller
         Request $request,
         int $id
     ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
         }
 
-        $student = $this->students->find($id);
+        $student = $this->students->find(
+            $id
+        );
 
         if ($student === null) {
             return Response::notFound();
         }
 
-        $classroomId = $request->input(
-            'classroom_id'
+        /*
+         * --------------------------------------------------------------
+         * Read input
+         * --------------------------------------------------------------
+         */
+
+        $admissionNumber = strtoupper(
+            trim(
+                (string) $request->input(
+                    'admission_number',
+                    ''
+                )
+            )
         );
 
-        $data = [
-            'first_name' => trim(
-                (string) $request->input('first_name')
-            ),
+        $firstName = trim(
+            (string) $request->input(
+                'first_name',
+                ''
+            )
+        );
 
-            'last_name' => trim(
-                (string) $request->input('last_name')
-            ),
+        $lastName = trim(
+            (string) $request->input(
+                'last_name',
+                ''
+            )
+        );
 
-            'classroom_id' => $classroomId === null
-                || trim((string) $classroomId) === ''
+        $dateOfBirth = trim(
+            (string) $request->input(
+                'date_of_birth',
+                ''
+            )
+        );
+
+        $gender = strtolower(
+            trim(
+                (string) $request->input(
+                    'gender',
+                    ''
+                )
+            )
+        );
+
+        $classroomId = $request->input(
+            'classroom_id',
+            ''
+        );
+
+        $classroomId =
+            trim((string) $classroomId) === ''
                 ? null
-                : (string) $classroomId,
+                : (int) $classroomId;
+
+        /*
+         * --------------------------------------------------------------
+         * Prepare data
+         * --------------------------------------------------------------
+         */
+
+        $data = [
+            'admission_number' =>
+                $admissionNumber !== ''
+                    ? $admissionNumber
+                    : null,
+
+            'first_name' =>
+                $firstName,
+
+            'last_name' =>
+                $lastName,
+
+            'date_of_birth' =>
+                $dateOfBirth !== ''
+                    ? $dateOfBirth
+                    : null,
+
+            'gender' =>
+                $gender !== ''
+                    ? $gender
+                    : null,
+
+            'classroom_id' =>
+                $classroomId,
         ];
+
+        /*
+         * --------------------------------------------------------------
+         * Validation
+         * --------------------------------------------------------------
+         */
 
         $validator = Validator::make(
             $data,
             [
-                'first_name' => 'required|min:2|max:100',
-                'last_name' => 'required|min:2|max:100',
-                'classroom_id' => 'nullable|integer|min:1',
+                'admission_number' =>
+                    'required|min:2|max:50',
+
+                'first_name' =>
+                    'required|min:2|max:100',
+
+                'last_name' =>
+                    'required|min:2|max:100',
+
+                'classroom_id' =>
+                    'nullable|integer|min:1',
             ]
         );
 
-        if ($validator->fails()) {
+        $manualErrors = [];
+
+        /*
+         * Validate gender.
+         */
+        if (
+            $gender !== ''
+            && !in_array(
+                $gender,
+                [
+                    'male',
+                    'female',
+                    'other',
+                ],
+                true
+            )
+        ) {
+            $manualErrors['gender'] =
+                'Please select a valid gender.';
+        }
+
+        /*
+         * Validate date of birth.
+         */
+        if ($dateOfBirth !== '') {
+            $date = \DateTime::createFromFormat(
+                'Y-m-d',
+                $dateOfBirth
+            );
+
+            if (
+                $date === false
+                || $date->format('Y-m-d')
+                    !== $dateOfBirth
+            ) {
+                $manualErrors['date_of_birth'] =
+                    'Please enter a valid date of birth.';
+            }
+        }
+
+        /*
+         * Validate classroom.
+         */
+        if ($classroomId !== null) {
+            $classroom = $this->classrooms->find(
+                $classroomId
+            );
+
+            if ($classroom === null) {
+                $manualErrors['classroom_id'] =
+                    'Selected classroom does not exist.';
+            }
+        }
+
+        /*
+         * Return validation errors.
+         */
+        if (
+            $validator->fails()
+            || $manualErrors !== []
+        ) {
             $this->session->flash(
                 '_old_input',
                 $data
@@ -308,7 +642,10 @@ final class StudentController extends Controller
 
             $this->session->flash(
                 '_errors',
-                $validator->errors()
+                array_merge(
+                    $validator->errors(),
+                    $manualErrors
+                )
             );
 
             return $this->redirect(
@@ -318,22 +655,44 @@ final class StudentController extends Controller
             );
         }
 
-        $updated = $this->students->update(
-            $id,
-            $data
-        );
+        /*
+         * --------------------------------------------------------------
+         * Update database
+         * --------------------------------------------------------------
+         */
 
-        if (!$updated) {
-            $this->session->flash(
-                'error',
-                'Unable to update student.'
+        try {
+            $student->update(
+                $data
             );
+        } catch (PDOException $exception) {
 
-            return $this->redirect(
-                '/SchoolERP/public/students/'
-                . $id
-                . '/edit'
-            );
+            if (
+                $this->isDuplicateAdmissionException(
+                    $exception
+                )
+            ) {
+                $this->session->flash(
+                    '_old_input',
+                    $data
+                );
+
+                $this->session->flash(
+                    '_errors',
+                    [
+                        'admission_number' =>
+                            'This admission number is already assigned to another student.',
+                    ]
+                );
+
+                return $this->redirect(
+                    '/SchoolERP/public/students/'
+                    . $id
+                    . '/edit'
+                );
+            }
+
+            throw $exception;
         }
 
         $this->session->flash(
@@ -359,13 +718,19 @@ final class StudentController extends Controller
             return $forbidden;
         }
 
-        $student = $this->students->find($id);
+        $student = $this->students->find(
+            $id
+        );
 
         if ($student === null) {
             return Response::notFound();
         }
 
-        if (!$this->students->delete($id)) {
+        if (
+            !$this->students->delete(
+                $id
+            )
+        ) {
             $this->session->flash(
                 'error',
                 'Unable to delete student.'
@@ -384,5 +749,29 @@ final class StudentController extends Controller
         return $this->redirect(
             '/SchoolERP/public/students'
         );
+    }
+
+    /**
+     * Determine whether an exception represents
+     * a duplicate admission-number violation.
+     */
+    private function isDuplicateAdmissionException(
+        PDOException $exception
+    ): bool {
+        $message = strtolower(
+            $exception->getMessage()
+        );
+
+        return $exception->getCode() === '23000'
+            && (
+                str_contains(
+                    $message,
+                    'admission_number'
+                )
+                || str_contains(
+                    $message,
+                    'students_admission_number_unique'
+                )
+            );
     }
 }

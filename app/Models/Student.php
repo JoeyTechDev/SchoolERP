@@ -19,8 +19,11 @@ final class Student extends Model
      * @var array<int,string>
      */
     protected array $fillable = [
+        'admission_number',
         'first_name',
         'last_name',
+        'date_of_birth',
+        'gender',
         'classroom_id',
     ];
 
@@ -32,6 +35,7 @@ final class Student extends Model
     protected array $casts = [
         'id' => 'int',
         'classroom_id' => 'int',
+        'date_of_birth' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
