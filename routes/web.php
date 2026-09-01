@@ -12,6 +12,7 @@ use SchoolERP\Controllers\ReportCardController;
 use SchoolERP\Controllers\TermController;
 use SchoolERP\Controllers\AttendanceController;
 use SchoolERP\Controllers\AttendanceHistoryController;
+use SchoolERP\Controllers\TeacherController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -419,6 +420,47 @@ $router->post(
 $router->get(
     '/report-card/print',
     [ReportCardController::class, 'print']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/teachers',
+    [TeacherController::class, 'index']
+);
+
+$router->get(
+    '/teachers/create',
+    [TeacherController::class, 'create']
+);
+
+$router->post(
+    '/teachers',
+    [TeacherController::class, 'store']
+);
+
+$router->get(
+    '/teachers/{id}/edit',
+    [TeacherController::class, 'edit']
+);
+
+$router->post(
+    '/teachers/{id}/update',
+    [TeacherController::class, 'update']
+);
+
+$router->post(
+    '/teachers/{id}/delete',
+    [TeacherController::class, 'destroy']
+);
+
+$router->get(
+    '/teachers/{id}',
+    [TeacherController::class, 'show']
 );
 
 /*

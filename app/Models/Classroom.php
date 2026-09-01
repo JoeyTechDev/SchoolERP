@@ -32,4 +32,15 @@ final class Classroom extends Model
             'classroom_id'
         );
     }
+
+    /**
+     * Classroom has many teacher assignments.
+     */
+    public function teacherAssignments()
+    {
+        return $this->hasMany(
+            TeacherAssignment::class,
+            'classroom_id'
+        );
+    }
 }

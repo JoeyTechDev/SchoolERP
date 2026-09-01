@@ -21,7 +21,6 @@ final class Subject extends Model
     protected array $fillable = [
         'name',
         'code',
-        'description',
         'status',
     ];
 
@@ -35,4 +34,15 @@ final class Subject extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Subject has many teacher assignments.
+     */
+    public function teacherAssignments()
+    {
+        return $this->hasMany(
+            TeacherAssignment::class,
+            'subject_id'
+        );
+    }
 }
