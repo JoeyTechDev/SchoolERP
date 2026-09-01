@@ -463,6 +463,16 @@ $router->get(
     [TeacherController::class, 'show']
 );
 
+$router->post(
+    '/teachers/{id}/assignments',
+    [TeacherController::class, 'storeAssignment']
+);
+
+$router->post(
+    '/teachers/{id}/assignments/{assignmentId}/delete',
+    [TeacherController::class, 'destroyAssignment']
+);
+
 /*
 |--------------------------------------------------------------------------
 | CSRF Test Routes

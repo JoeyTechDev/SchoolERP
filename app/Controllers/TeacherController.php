@@ -9,6 +9,9 @@ use PDOException;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
 use SchoolERP\Repositories\TeacherRepository;
+use SchoolERP\Repositories\ClassroomRepository;
+use SchoolERP\Repositories\SubjectRepository;
+use SchoolERP\Repositories\TeacherAssignmentRepository;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Validation\Validator;
 use SchoolERP\View\ViewFactory;
@@ -22,28 +25,41 @@ use SchoolERP\View\ViewFactory;
  *
  * Handles teacher management.
  */
+
+
 final class TeacherController extends Controller
 {
     /**
      * Teacher repository.
      */
     private TeacherRepository $teachers;
+    private ClassroomRepository $classrooms;
+
+    private SubjectRepository $subjects;
+
+    private TeacherAssignmentRepository $assignments;
 
     /**
      * Constructor.
      */
     public function __construct(
-        ViewFactory $views,
-        SessionInterface $session,
-        TeacherRepository $teachers
-    ) {
-        parent::__construct(
-            $views,
-            $session
-        );
+    ViewFactory $views,
+    SessionInterface $session,
+    TeacherRepository $teachers,
+    ClassroomRepository $classrooms,
+    SubjectRepository $subjects,
+    TeacherAssignmentRepository $assignments
+) {
+    parent::__construct(
+        $views,
+        $session
+    );
 
-        $this->teachers = $teachers;
-    }
+    $this->teachers = $teachers;
+    $this->classrooms = $classrooms;
+    $this->subjects = $subjects;
+    $this->assignments = $assignments;
+}
 
     /**
      * Display teachers.
@@ -100,29 +116,50 @@ final class TeacherController extends Controller
      * Display one teacher.
      */
     public function show(
-        int $id
+    int $id
     ): Response {
-        $forbidden = $this->requireRole([1]);
+    $forbidden = $this->requireRole([1]);
 
-        if ($forbidden !== null) {
-            return $forbidden;
-        }
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
 
-        $teacher = $this->teachers->find(
+    $teacher = $this->teachers->find(
+        $id
+    );
+
+    if ($teacher === null) {
+        return Response::notFound();
+    }
+
+    $assignments =
+        $this->assignments->forTeacher(
             $id
         );
 
-        if ($teacher === null) {
-            return Response::notFound();
-        }
+    $classrooms =
+        $this->classrooms->allOrdered();
 
-        return $this->view(
-            'teachers.show',
-            [
-                'title' => 'Teacher Details',
-                'teacher' => $teacher,
-            ]
-        );
+    $subjects =
+        $this->subjects->allOrdered();
+
+    return $this->view(
+        'teachers.show',
+        [
+            'title' => 'Teacher Details',
+
+            'teacher' => $teacher,
+
+            'assignments' =>
+                $assignments,
+
+            'classrooms' =>
+                $classrooms,
+
+            'subjects' =>
+                $subjects,
+        ]
+    );
     }
 
     /**
@@ -254,6 +291,212 @@ final class TeacherController extends Controller
         );
     }
 
+    public function storeAssignment(
+    Request $request,
+    int $id
+    ): Response {
+    $forbidden = $this->requireRole([1]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    $teacher = $this->teachers->find(
+        $id
+    );
+
+    if ($teacher === null) {
+        return Response::notFound();
+    }
+
+    $classroomId = (int) $request->input(
+        'classroom_id',
+        0
+    );
+
+    $subjectId = (int) $request->input(
+        'subject_id',
+        0
+    );
+
+    $data = [
+        'teacher_id' => $id,
+        'classroom_id' => $classroomId,
+        'subject_id' => $subjectId,
+        'is_active' => 1,
+    ];
+
+    $validator = Validator::make(
+        $data,
+        [
+            'classroom_id' =>
+                'required|integer|min:1',
+
+            'subject_id' =>
+                'required|integer|min:1',
+        ]
+    );
+
+    $errors = [];
+
+    if (
+        $this->classrooms->find(
+            $classroomId
+        ) === null
+    ) {
+        $errors['classroom_id'] =
+            'Selected classroom does not exist.';
+    }
+
+    $subjectExists = false;
+
+    foreach (
+        $this->subjects->allOrdered()
+        as $subject
+    ) {
+        if (
+            (int) ($subject['id'] ?? 0)
+            === $subjectId
+        ) {
+            $subjectExists = true;
+            break;
+        }
+    }
+
+    if (!$subjectExists) {
+        $errors['subject_id'] =
+            'Selected subject does not exist.';
+    }
+
+    if (
+        $this->assignments->findExact(
+            $id,
+            $classroomId,
+            $subjectId
+        ) !== null
+    ) {
+        $errors['assignment'] =
+            'This teacher is already assigned to this subject in the selected classroom.';
+    }
+
+    if (
+        $validator->fails()
+        || $errors !== []
+    ) {
+        $this->session->flash(
+            '_errors',
+            array_merge(
+                $validator->errors(),
+                $errors
+            )
+        );
+
+        return $this->redirect(
+            '/SchoolERP/public/teachers/'
+            . $id
+        );
+    }
+
+    try {
+        $this->assignments->create(
+            $data
+        );
+    } catch (PDOException $exception) {
+
+        if (
+            $exception->getCode() === '23000'
+        ) {
+            $this->session->flash(
+                'error',
+                'This teacher assignment already exists.'
+            );
+
+            return $this->redirect(
+                '/SchoolERP/public/teachers/'
+                . $id
+            );
+        }
+
+        throw $exception;
+    }
+
+    $this->session->flash(
+        'success',
+        'Teaching assignment added successfully.'
+    );
+
+    return $this->redirect(
+        '/SchoolERP/public/teachers/'
+        . $id
+    );
+    }
+
+    public function destroyAssignment(
+    int $id,
+    int $assignmentId
+): Response {
+    $forbidden = $this->requireRole([1]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    $teacher = $this->teachers->find(
+        $id
+    );
+
+    if ($teacher === null) {
+        return Response::notFound();
+    }
+
+    $assignment =
+        $this->assignments->find(
+            $assignmentId
+        );
+
+    if ($assignment === null) {
+        return Response::notFound();
+    }
+
+    /*
+     * Make sure an administrator cannot delete
+     * another teacher's assignment through a
+     * manipulated URL.
+     */
+    if (
+        (int) $assignment->teacher_id
+        !== $id
+    ) {
+        return Response::notFound();
+    }
+
+    if (
+        !$this->assignments->delete(
+            $assignmentId
+        )
+    ) {
+        $this->session->flash(
+            'error',
+            'Unable to remove the teaching assignment.'
+        );
+
+        return $this->redirect(
+            '/SchoolERP/public/teachers/'
+            . $id
+        );
+    }
+
+    $this->session->flash(
+        'success',
+        'Teaching assignment removed successfully.'
+    );
+
+    return $this->redirect(
+        '/SchoolERP/public/teachers/'
+        . $id
+    );
+    }
+    
     /**
      * Show edit form.
      */
