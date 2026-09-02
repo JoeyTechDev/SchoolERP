@@ -133,4 +133,32 @@ final class TeacherRepository extends Repository
             $data
         );
     }
+
+    /**
+    * Find a teacher profile by the linked user account.
+    */
+    public function findByUserId(
+        int $userId
+    ): ?Teacher {
+        if ($userId <= 0) {
+        return null;
+    }
+
+    $record = $this->model
+        ->query()
+        ->where(
+            'user_id',
+            '=',
+            $userId
+        )
+        ->first();
+
+    if ($record === null) {
+        return null;
+    }
+
+    return (new Teacher())->fill(
+        $record
+    );
+    }
 }
