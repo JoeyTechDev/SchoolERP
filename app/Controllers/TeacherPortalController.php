@@ -11,6 +11,10 @@ use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Repositories\SubjectRepository;
 use SchoolERP\Repositories\TeacherAssignmentRepository;
 use SchoolERP\Services\TeacherAuthorizationService;
+use DateTimeImmutable;
+use SchoolERP\Validation\Validator;
+use SchoolERP\Models\Student;
+use SchoolERP\Query\Pagination\Paginator;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\View\ViewFactory;
 
@@ -398,4 +402,608 @@ final class TeacherPortalController extends Controller
             ]
         );
     }
+
+/**
+ * Display students belonging to the current teacher's
+ * assigned classrooms.
+ */
+public function students(
+    Request $request
+): Response {
+    $forbidden = $this->requireRole([2]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    $teacher =
+        $this->authorization->currentTeacher();
+
+    if ($teacher === null) {
+        return Response::make(
+            '403 Forbidden - No teacher profile is linked to this account.',
+            403
+        );
+    }
+
+    $teacherId = (int) (
+        $teacher->id ?? 0
+    );
+
+    if ($teacherId <= 0) {
+        return Response::make(
+            '403 Forbidden - Invalid teacher profile.',
+            403
+        );
+    }
+
+    /*
+     * Get active assignments for this teacher.
+     */
+    $assignments =
+        $this->assignments->forTeacher(
+            $teacherId,
+            true
+        );
+
+    /*
+     * Collect unique classroom IDs.
+     */
+    $assignedClassroomIds = [];
+
+    foreach (
+        $assignments
+        as $assignment
+    ) {
+        $classroomId = (int) (
+            $assignment->classroom_id
+            ?? 0
+        );
+
+        if ($classroomId > 0) {
+            $assignedClassroomIds[
+                $classroomId
+            ] = true;
+        }
+    }
+
+    /*
+     * Load all students and filter strictly by
+     * assigned classroom.
+     */
+    $allStudents =
+        $this->students->allOrdered();
+
+    $students = [];
+
+    foreach (
+        $allStudents
+        as $student
+    ) {
+        $studentClassroomId = (int) (
+            $student['classroom_id']
+            ?? 0
+        );
+
+        if (
+            $studentClassroomId <= 0
+            || !isset(
+                $assignedClassroomIds[
+                    $studentClassroomId
+                ]
+            )
+        ) {
+            continue;
+        }
+
+        $students[] = $student;
+    }
+
+    /*
+     * Search.
+     */
+    $search = trim(
+        (string) $request->get(
+            'q',
+            ''
+        )
+    );
+
+    if ($search !== '') {
+
+        $searchLower =
+            strtolower($search);
+
+        $students = array_values(
+            array_filter(
+                $students,
+                static function (
+                    array $student
+                ) use (
+                    $searchLower
+                ): bool {
+
+                    $firstName =
+                        strtolower(
+                            trim(
+                                (string) (
+                                    $student[
+                                        'first_name'
+                                    ] ?? ''
+                                )
+                            )
+                        );
+
+                    $lastName =
+                        strtolower(
+                            trim(
+                                (string) (
+                                    $student[
+                                        'last_name'
+                                    ] ?? ''
+                                )
+                            )
+                        );
+
+                    $admissionNumber =
+                        strtolower(
+                            trim(
+                                (string) (
+                                    $student[
+                                        'admission_number'
+                                    ] ?? ''
+                                )
+                            )
+                        );
+
+                    $fullName =
+                        trim(
+                            $firstName
+                            . ' '
+                            . $lastName
+                        );
+
+                    return str_contains(
+                        $firstName,
+                        $searchLower
+                    )
+                    || str_contains(
+                        $lastName,
+                        $searchLower
+                    )
+                    || str_contains(
+                        $fullName,
+                        $searchLower
+                    )
+                    || str_contains(
+                        $admissionNumber,
+                        $searchLower
+                    );
+                }
+            )
+        );
+    }
+
+    /*
+     * Classroom lookup.
+     */
+    $classroomRecords =
+        $this->classrooms->allOrdered();
+
+    $classroomLookup = [];
+
+    foreach (
+        $classroomRecords
+        as $classroom
+    ) {
+        $classroomId = (int) (
+            $classroom['id'] ?? 0
+        );
+
+        if ($classroomId <= 0) {
+            continue;
+        }
+
+        $classroomLookup[
+            $classroomId
+        ] = (string) (
+            $classroom['name'] ?? ''
+        );
+    }
+
+    /*
+     * Attach classroom names.
+     */
+    foreach (
+        $students
+        as &$student
+    ) {
+        $classroomId = (int) (
+            $student['classroom_id']
+            ?? 0
+        );
+
+        $student['classroom_name'] =
+            $classroomLookup[
+                $classroomId
+            ]
+            ?? 'Unknown Classroom';
+    }
+
+    unset($student);
+
+    /*
+     * Simple pagination for the Teacher Portal.
+     */
+    $page = max(
+        1,
+        (int) $request->get(
+            'page',
+            1
+        )
+    );
+
+    $perPage = 10;
+
+    $total = count($students);
+
+    $offset =
+        ($page - 1)
+        * $perPage;
+
+    $pageItems = array_slice(
+        $students,
+        $offset,
+        $perPage
+    );
+
+    $pagination = new Paginator(
+        $pageItems,
+        $total,
+        $perPage,
+        $page
+    );
+
+    return $this->view(
+        'teacher.students',
+        [
+            'title' =>
+                'My Students',
+
+            'students' =>
+                $pagination->items(),
+
+            'pagination' =>
+                $pagination,
+
+            'search' =>
+                $search,
+        ]
+    );
+}
+
+/**
+ * Display one student from the current teacher's
+ * assigned classrooms.
+ */
+public function student(
+    int $id
+): Response {
+    $forbidden = $this->requireRole([2]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    /*
+     * The authorization service is the security boundary.
+     *
+     * A teacher cannot access a student outside an
+     * assigned classroom even if the ID is manually
+     * entered into the URL.
+     */
+    if (
+        !$this->authorization->canManageStudent(
+            $id
+        )
+    ) {
+        return Response::make(
+            '403 Forbidden - You are not authorized to access this student.',
+            403
+        );
+    }
+
+    $student =
+        $this->students->find(
+            $id
+        );
+
+    if ($student === null) {
+        return Response::notFound();
+    }
+
+    /*
+     * Load classroom relationship for the existing
+     * students.show view.
+     */
+    $student->setRelation(
+        'classroom',
+        $student->classroom()->get()
+    );
+
+    return $this->view(
+        'teacher.student',
+        [
+            'title' =>
+                'Student Details',
+
+            'student' =>
+                $student,
+        ]
+    );
+}
+
+/**
+ * Display the current teacher's profile.
+ */
+public function profile(): Response
+{
+    $forbidden = $this->requireRole([2]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    $teacher =
+        $this->authorization->currentTeacher();
+
+    if ($teacher === null) {
+        return Response::make(
+            '403 Forbidden - No teacher profile is linked to this account.',
+            403
+        );
+    }
+
+    return $this->view(
+        'teacher.profile',
+        [
+            'title' => 'My Profile',
+            'teacher' => $teacher,
+        ]
+    );
+}
+
+/**
+ * Update the current teacher's profile.
+ *
+ * Teachers can update personal/contact information only.
+ * Employment identity remains administrator-controlled.
+ */
+public function updateProfile(
+    Request $request
+): Response {
+    $forbidden = $this->requireRole([2]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    $teacher =
+        $this->authorization->currentTeacher();
+
+    if ($teacher === null) {
+        return Response::make(
+            '403 Forbidden - No teacher profile is linked to this account.',
+            403
+        );
+    }
+
+    /*
+     * Read input.
+     */
+    $firstName = trim(
+        (string) $request->input(
+            'first_name',
+            ''
+        )
+    );
+
+    $lastName = trim(
+        (string) $request->input(
+            'last_name',
+            ''
+        )
+    );
+
+    $dateOfBirth = trim(
+        (string) $request->input(
+            'date_of_birth',
+            ''
+        )
+    );
+
+    $gender = strtolower(
+        trim(
+            (string) $request->input(
+                'gender',
+                ''
+            )
+        )
+    );
+
+    $phone = trim(
+        (string) $request->input(
+            'phone',
+            ''
+        )
+    );
+
+    $email = trim(
+        (string) $request->input(
+            'email',
+            ''
+        )
+    );
+
+    $address = trim(
+        (string) $request->input(
+            'address',
+            ''
+        )
+    );
+
+    /*
+     * Prepare data.
+     */
+    $data = [
+        'first_name' =>
+            $firstName,
+
+        'last_name' =>
+            $lastName,
+
+        'date_of_birth' =>
+            $dateOfBirth !== ''
+                ? $dateOfBirth
+                : null,
+
+        'gender' =>
+            $gender !== ''
+                ? $gender
+                : null,
+
+        'phone' =>
+            $phone !== ''
+                ? $phone
+                : null,
+
+        'email' =>
+            $email !== ''
+                ? $email
+                : null,
+
+        'address' =>
+            $address !== ''
+                ? $address
+                : null,
+    ];
+
+    /*
+     * Validate basic fields.
+     */
+    $validator = Validator::make(
+        $data,
+        [
+            'first_name' =>
+                'required|min:2|max:100',
+
+            'last_name' =>
+                'required|min:2|max:100',
+
+            'email' =>
+                'nullable|email|max:150',
+        ]
+    );
+
+    $manualErrors = [];
+
+    /*
+     * Gender.
+     */
+    if (
+        $gender !== ''
+        && !in_array(
+            $gender,
+            [
+                'male',
+                'female',
+                'other',
+            ],
+            true
+        )
+    ) {
+        $manualErrors['gender'] =
+            'Please select a valid gender.';
+    }
+
+    /*
+     * Date of birth.
+     */
+    if ($dateOfBirth !== '') {
+
+        $date =
+            DateTimeImmutable::createFromFormat(
+                'Y-m-d',
+                $dateOfBirth
+            );
+
+        if (
+            $date === false
+            || $date->format('Y-m-d')
+                !== $dateOfBirth
+        ) {
+            $manualErrors['date_of_birth'] =
+                'Please enter a valid date of birth.';
+        }
+    }
+
+    /*
+     * Email uniqueness is intentionally not checked
+     * here because the Teacher profile email is not
+     * necessarily the login account email.
+     */
+
+    if (
+        $validator->fails()
+        || $manualErrors !== []
+    ) {
+        $this->session->flash(
+            '_old_input',
+            $data
+        );
+
+        $this->session->flash(
+            '_errors',
+            array_merge(
+                $validator->errors(),
+                $manualErrors
+            )
+        );
+
+        return $this->redirect(
+            '/SchoolERP/public/teacher/profile'
+        );
+    }
+
+    /*
+     * Update only the fields teachers are allowed
+     * to change.
+     */
+    $updated = $teacher->update(
+        $data
+    );
+
+    /*
+     * Some ORM implementations return 0 when the
+     * submitted values are identical to existing values.
+     * The request was still processed successfully.
+     */
+    if (
+        $updated === false
+    ) {
+        $this->session->flash(
+            'success',
+            'Profile information saved.'
+        );
+    } else {
+        $this->session->flash(
+            'success',
+            'Profile updated successfully.'
+        );
+    }
+
+    return $this->redirect(
+        '/SchoolERP/public/teacher/profile'
+    );
+}
 }

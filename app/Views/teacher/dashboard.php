@@ -188,52 +188,77 @@ $firstName = trim(
 
     </div>
 
+<!-- ============================================================= -->
+<!-- QUICK ACTIONS                                                  -->
+<!-- ============================================================= -->
 
-    <!-- ============================================================= -->
-    <!-- QUICK ACTIONS                                                   -->
-    <!-- ============================================================= -->
+<div class="card border-0 shadow-sm mb-4">
 
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
 
-        <div class="card-header bg-white border-bottom">
+        <h2 class="h5 fw-semibold mb-0">
+            Quick Actions
+        </h2>
 
-            <h2 class="h5 fw-semibold mb-0">
-                Quick Actions
-            </h2>
-
-        </div>
-
-
-        <div class="card-body">
-
-            <div class="row g-3">
-
-                <div class="col-md-6">
-
-                    <a
-                        href="/SchoolERP/public/attendance"
-                        class="btn btn-outline-primary w-100 py-3"
-                    >
-
-                        Daily Attendance
-
-                    </a>
-
-                </div>
+    </div>
 
 
-                <div class="col-md-6">
+    <div class="card-body">
 
-                    <a
-                        href="/SchoolERP/public/academic-results"
-                        class="btn btn-outline-primary w-100 py-3"
-                    >
+        <div class="row g-3">
 
-                        Academic Results
+            <!-- My Students -->
 
-                    </a>
+            <div class="col-md-3">
 
-                </div>
+                <a
+                    href="/SchoolERP/public/teacher/students"
+                    class="btn btn-outline-primary w-100 py-3"
+                >
+                    My Students
+                </a>
+
+            </div>
+
+
+            <!-- Daily Attendance -->
+
+            <div class="col-md-3">
+
+                <a
+                    href="/SchoolERP/public/attendance"
+                    class="btn btn-outline-primary w-100 py-3"
+                >
+                    Daily Attendance
+                </a>
+
+            </div>
+
+
+            <!-- Academic Results -->
+
+            <div class="col-md-3">
+
+                <a
+                    href="/SchoolERP/public/academic-results"
+                    class="btn btn-outline-primary w-100 py-3"
+                >
+                    Academic Results
+                </a>
+
+            </div>
+
+
+            <!-- My Profile -->
+
+            <div class="col-md-3">
+
+                <a
+                    href="/SchoolERP/public/teacher/profile"
+                    class="btn btn-outline-primary w-100 py-3"
+                >
+                    My Profile
+                </a>
 
             </div>
 
@@ -241,6 +266,7 @@ $firstName = trim(
 
     </div>
 
+</div>
 
     <!-- ============================================================= -->
     <!-- MY CLASSROOMS                                                  -->

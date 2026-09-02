@@ -490,6 +490,16 @@ $router->get(
     [TeacherPortalController::class, 'dashboard']
 );
 
+$router->get(
+    '/teacher/students',
+    [TeacherPortalController::class, 'students']
+);
+
+$router->get(
+    '/teacher/students/{id}',
+    [TeacherPortalController::class, 'student']
+);
+
 /*
 |--------------------------------------------------------------------------
 | CSRF Test Routes
@@ -527,3 +537,13 @@ $router->post('/csrf-test', function (Request $request) {
         'CSRF Verification Passed!'
     );
 });
+
+$router->get(
+    '/teacher/profile',
+    [TeacherPortalController::class, 'profile']
+);
+
+$router->post(
+    '/teacher/profile',
+    [TeacherPortalController::class, 'updateProfile']
+);
