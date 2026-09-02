@@ -13,6 +13,7 @@ use SchoolERP\Controllers\TermController;
 use SchoolERP\Controllers\AttendanceController;
 use SchoolERP\Controllers\AttendanceHistoryController;
 use SchoolERP\Controllers\TeacherController;
+use SchoolERP\Controllers\TeacherPortalController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -471,6 +472,22 @@ $router->post(
 $router->post(
     '/teachers/{id}/assignments/{assignmentId}/delete',
     [TeacherController::class, 'destroyAssignment']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Portal
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/teacher',
+    [TeacherPortalController::class, 'dashboard']
+);
+
+$router->get(
+    '/teacher/dashboard',
+    [TeacherPortalController::class, 'dashboard']
 );
 
 /*
