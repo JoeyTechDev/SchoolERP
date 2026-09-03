@@ -1,3 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+use SchoolERP\Session\SessionInterface;
+
+/*
+|--------------------------------------------------------------------------
+| Current authenticated role
+|--------------------------------------------------------------------------
+*/
+
+$session = $GLOBALS['container']->make(
+    SessionInterface::class
+);
+
+$currentRoleId = (int) $session->get(
+    'role_id',
+    0
+);
+
+$isAdmin = $currentRoleId === 1;
+
+$isTeacher = $currentRoleId === 2;
+
+/*
+|--------------------------------------------------------------------------
+| Portal home
+|--------------------------------------------------------------------------
+*/
+
+$homeUrl = $isTeacher
+    ? '/SchoolERP/public/teacher/dashboard'
+    : '/SchoolERP/public/';
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -54,13 +91,32 @@
             border-top: 1px solid #dee2e6;
         }
 
+        .app-navigation .nav-link {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        .app-navigation .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+            border-radius: 0.375rem;
+        }
+
+        .app-navigation .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.16);
+            border-radius: 0.375rem;
+            font-weight: 600;
+        }
+
     </style>
 
 </head>
 
 <body>
 
-    <!-- Navigation -->
+    <!-- ============================================================= -->
+    <!-- NAVIGATION                                                     -->
+    <!-- ============================================================= -->
+
     <header class="app-header">
 
         <nav class="navbar navbar-expand-lg navbar-dark">
@@ -69,10 +125,15 @@
 
                 <a
                     class="navbar-brand"
-                    href="/SchoolERP/public/"
+                    href="<?= htmlspecialchars(
+                        $homeUrl,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>"
                 >
                     SchoolERP
                 </a>
+
 
                 <button
                     class="navbar-toggler"
@@ -86,23 +147,250 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
+
                 <div
                     class="collapse navbar-collapse"
                     id="mainNavigation"
                 >
 
-                    <ul class="navbar-nav ms-auto">
+                    <ul
+                        class="navbar-nav ms-auto align-items-lg-center gap-lg-1 app-navigation"
+                    >
 
-                        <li class="nav-item">
+                        <?php if ($isTeacher): ?>
 
-                            <a
-                                class="nav-link"
-                                href="/SchoolERP/public/students"
-                            >
-                                Students
-                            </a>
+                            <!-- ===================================== -->
+                            <!-- TEACHER PORTAL                        -->
+                            <!-- ===================================== -->
 
-                        </li>
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/teacher/dashboard"
+                                >
+                                    Dashboard
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/teacher/students"
+                                >
+                                    My Students
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/attendance"
+                                >
+                                    Attendance
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/academic-results"
+                                >
+                                    Academic Results
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/teacher/profile"
+                                >
+                                    My Profile
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/auth/logout"
+                                >
+                                    Logout
+                                </a>
+
+                            </li>
+
+
+                        <?php elseif ($isAdmin): ?>
+
+                            <!-- ===================================== -->
+                            <!-- ADMINISTRATOR PORTAL                  -->
+                            <!-- ===================================== -->
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/"
+                                >
+                                    Dashboard
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/students"
+                                >
+                                    Students
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/teachers"
+                                >
+                                    Teachers
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/classrooms"
+                                >
+                                    Classrooms
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/subjects"
+                                >
+                                    Subjects
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/academic-sessions"
+                                >
+                                    Sessions
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/terms"
+                                >
+                                    Terms
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/attendance"
+                                >
+                                    Attendance
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/academic-results"
+                                >
+                                    Results
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/report-card"
+                                >
+                                    Report Cards
+                                </a>
+
+                            </li>
+
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/auth/logout"
+                                >
+                                    Logout
+                                </a>
+
+                            </li>
+
+
+                        <?php else: ?>
+
+                            <!-- ===================================== -->
+                            <!-- FALLBACK                               -->
+                            <!-- ===================================== -->
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/auth/logout"
+                                >
+                                    Logout
+                                </a>
+
+                            </li>
+
+                        <?php endif; ?>
 
                     </ul>
 
@@ -115,7 +403,10 @@
     </header>
 
 
-    <!-- Main Content -->
+    <!-- ============================================================= -->
+    <!-- MAIN CONTENT                                                   -->
+    <!-- ============================================================= -->
+
     <main class="app-main">
 
         <?= $content ?>
@@ -123,7 +414,10 @@
     </main>
 
 
-    <!-- Footer -->
+    <!-- ============================================================= -->
+    <!-- FOOTER                                                         -->
+    <!-- ============================================================= -->
+
     <footer class="app-footer py-3 mt-4">
 
         <div class="container-fluid px-4">
