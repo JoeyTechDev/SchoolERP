@@ -2,21 +2,51 @@
 
 declare(strict_types=1);
 
+use SchoolERP\Session\SessionInterface;
+
 /**
  * @var \SchoolERP\Models\Teacher $teacher
  */
 
-if (!isset($teacher)) {
+/*
+|--------------------------------------------------------------------------
+| Guard
+|--------------------------------------------------------------------------
+*/
+
+if (!isset($teacher) || !is_object($teacher)) {
     return;
 }
 
-$errors = $_SESSION['_errors'] ?? [];
+/*
+|--------------------------------------------------------------------------
+| Session / Flash Data
+|--------------------------------------------------------------------------
+*/
+
+$session = $GLOBALS['container']->make(
+    SessionInterface::class
+);
+
+$successMessage = $session->flash(
+    'success'
+);
+
+$errorMessage = $session->flash(
+    'error'
+);
+
+$errors = $session->flash(
+    '_errors'
+);
+
+$oldInput = $session->flash(
+    '_old_input'
+);
 
 if (!is_array($errors)) {
     $errors = [];
 }
-
-$oldInput = $_SESSION['_old_input'] ?? [];
 
 if (!is_array($oldInput)) {
     $oldInput = [];
@@ -24,11 +54,11 @@ if (!is_array($oldInput)) {
 
 /*
 |--------------------------------------------------------------------------
-| Helpers
+| Error Helper
 |--------------------------------------------------------------------------
 */
 
-$error = static function (
+$getError = static function (
     string $field
 ) use (
     $errors
@@ -44,7 +74,13 @@ $error = static function (
         : '';
 };
 
-$value = static function (
+/*
+|--------------------------------------------------------------------------
+| Field Helpers
+|--------------------------------------------------------------------------
+*/
+
+$getValue = static function (
     string $field,
     mixed $default = ''
 ) use (
@@ -66,28 +102,32 @@ $value = static function (
         : (string) $value;
 };
 
-$fieldClass = static function (
+$getFieldClass = static function (
     string $field
 ) use (
-    $error
+    $getError
 ): string {
-    return $error($field) !== ''
+    return $getError($field) !== ''
         ? ' is-invalid'
         : '';
 };
 
 /*
 |--------------------------------------------------------------------------
-| Existing values
+| Teacher Personal Information
 |--------------------------------------------------------------------------
 */
 
-$firstName = (string) (
-    $teacher->first_name ?? ''
+$firstName = trim(
+    (string) (
+        $teacher->first_name ?? ''
+    )
 );
 
-$lastName = (string) (
-    $teacher->last_name ?? ''
+$lastName = trim(
+    (string) (
+        $teacher->last_name ?? ''
+    )
 );
 
 $dateOfBirth = '';
@@ -102,76 +142,88 @@ if (
         );
 } elseif (
     $teacher->date_of_birth !== null
+    && $teacher->date_of_birth !== ''
 ) {
     $dateOfBirth =
         (string) $teacher->date_of_birth;
 }
 
 $gender = strtolower(
-    (string) (
-        $teacher->gender ?? ''
+    trim(
+        (string) (
+            $teacher->gender ?? ''
+        )
     )
 );
 
-$phone = (string) (
-    $teacher->phone ?? ''
+$phone = trim(
+    (string) (
+        $teacher->phone ?? ''
+    )
 );
 
-$email = (string) (
-    $teacher->email ?? ''
+$email = trim(
+    (string) (
+        $teacher->email ?? ''
+    )
 );
 
-$address = (string) (
-    $teacher->address ?? ''
+$address = trim(
+    (string) (
+        $teacher->address ?? ''
+    )
 );
 
 /*
 |--------------------------------------------------------------------------
-| Override with failed form submission
+| Restore old input after validation failure
 |--------------------------------------------------------------------------
 */
 
-$firstName = $value(
+$firstName = $getValue(
     'first_name',
     $firstName
 );
 
-$lastName = $value(
+$lastName = $getValue(
     'last_name',
     $lastName
 );
 
-$dateOfBirth = $value(
+$dateOfBirth = $getValue(
     'date_of_birth',
     $dateOfBirth
 );
 
 $gender = strtolower(
-    $value(
+    $getValue(
         'gender',
         $gender
     )
 );
 
-$phone = $value(
+$phone = $getValue(
     'phone',
     $phone
 );
 
-$email = $value(
+$email = $getValue(
     'email',
     $email
 );
 
-$address = $value(
+$address = $getValue(
     'address',
     $address
 );
 
 /*
 |--------------------------------------------------------------------------
-| Administrator-controlled fields
+| Employment Information
 |--------------------------------------------------------------------------
+|
+| These fields are displayed only. Teachers cannot edit them.
+|
 */
 
 $employeeNumber = trim(
@@ -215,6 +267,7 @@ if (
         );
 } elseif (
     $teacher->date_employed !== null
+    && $teacher->date_employed !== ''
 ) {
     $dateEmployed =
         (string) $teacher->date_employed;
@@ -225,7 +278,145 @@ if (
 <div class="container-fluid py-4">
 
     <!-- ============================================================= -->
-    <!-- HEADER                                                         -->
+    <!-- FLASH MESSAGES                                                 -->
+    <!-- ============================================================= -->
+
+    <?php if (
+        is_string($successMessage)
+        && trim($successMessage) !== ''
+    ): ?>
+
+        <div
+            class="alert alert-success alert-dismissible fade show"
+            role="alert"
+        >
+
+            <?= htmlspecialchars(
+                $successMessage,
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+            ></button>
+
+        </div>
+
+    <?php endif; ?>
+
+
+    <?php if (
+        is_string($errorMessage)
+        && trim($errorMessage) !== ''
+    ): ?>
+
+        <div
+            class="alert alert-danger alert-dismissible fade show"
+            role="alert"
+        >
+
+            <?= htmlspecialchars(
+                $errorMessage,
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+            ></button>
+
+        </div>
+
+    <?php endif; ?>
+
+
+    <?php
+    /*
+     * Display general validation errors that are not tied
+     * to a specific field.
+     */
+    $generalErrors = [];
+
+    foreach (
+        $errors as $field => $message
+    ) {
+        if (
+            !is_string($field)
+            || !in_array(
+                $field,
+                [
+                    'first_name',
+                    'last_name',
+                    'date_of_birth',
+                    'gender',
+                    'email',
+                    'current_password',
+                    'new_password',
+                    'new_password_confirmation',
+                ],
+                true
+            )
+        ) {
+            if (is_array($message)) {
+                foreach ($message as $item) {
+                    if (is_string($item)) {
+                        $generalErrors[] = $item;
+                    }
+                }
+            } elseif (
+                is_string($message)
+            ) {
+                $generalErrors[] = $message;
+            }
+        }
+    }
+    ?>
+
+
+    <?php if (
+        $generalErrors !== []
+    ): ?>
+
+        <div
+            class="alert alert-danger"
+            role="alert"
+        >
+
+            <ul class="mb-0">
+
+                <?php foreach (
+                    $generalErrors
+                    as $generalError
+                ): ?>
+
+                    <li>
+
+                        <?= htmlspecialchars(
+                            $generalError,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ) ?>
+
+                    </li>
+
+                <?php endforeach; ?>
+
+            </ul>
+
+        </div>
+
+    <?php endif; ?>
+
+
+    <!-- ============================================================= -->
+    <!-- PAGE HEADER                                                    -->
     <!-- ============================================================= -->
 
     <div
@@ -256,7 +447,7 @@ if (
 
 
     <!-- ============================================================= -->
-    <!-- PROFILE FORM                                                   -->
+    <!-- PERSONAL INFORMATION                                          -->
     <!-- ============================================================= -->
 
     <div class="card border-0 shadow-sm">
@@ -276,6 +467,10 @@ if (
 
         <div class="card-body p-4">
 
+            <!-- ===================================================== -->
+            <!-- PROFILE FORM                                            -->
+            <!-- ===================================================== -->
+
             <form
                 method="POST"
                 action="/SchoolERP/public/teacher/profile"
@@ -294,8 +489,13 @@ if (
                             for="first_name"
                             class="form-label fw-semibold"
                         >
+
                             First Name
-                            <span class="text-danger">*</span>
+
+                            <span class="text-danger">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -308,7 +508,7 @@ if (
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>"
-                            class="form-control<?= $fieldClass(
+                            class="form-control<?= $getFieldClass(
                                 'first_name'
                             ) ?>"
                             maxlength="100"
@@ -318,13 +518,15 @@ if (
 
 
                         <?php if (
-                            $error('first_name') !== ''
+                            $getError(
+                                'first_name'
+                            ) !== ''
                         ): ?>
 
                             <div class="invalid-feedback">
 
                                 <?= htmlspecialchars(
-                                    $error(
+                                    $getError(
                                         'first_name'
                                     ),
                                     ENT_QUOTES,
@@ -346,8 +548,13 @@ if (
                             for="last_name"
                             class="form-label fw-semibold"
                         >
+
                             Last Name
-                            <span class="text-danger">*</span>
+
+                            <span class="text-danger">
+                                *
+                            </span>
+
                         </label>
 
 
@@ -360,7 +567,7 @@ if (
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>"
-                            class="form-control<?= $fieldClass(
+                            class="form-control<?= $getFieldClass(
                                 'last_name'
                             ) ?>"
                             maxlength="100"
@@ -370,13 +577,15 @@ if (
 
 
                         <?php if (
-                            $error('last_name') !== ''
+                            $getError(
+                                'last_name'
+                            ) !== ''
                         ): ?>
 
                             <div class="invalid-feedback">
 
                                 <?= htmlspecialchars(
-                                    $error(
+                                    $getError(
                                         'last_name'
                                     ),
                                     ENT_QUOTES,
@@ -411,20 +620,22 @@ if (
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>"
-                            class="form-control<?= $fieldClass(
+                            class="form-control<?= $getFieldClass(
                                 'date_of_birth'
                             ) ?>"
                         >
 
 
                         <?php if (
-                            $error('date_of_birth') !== ''
+                            $getError(
+                                'date_of_birth'
+                            ) !== ''
                         ): ?>
 
                             <div class="invalid-feedback">
 
                                 <?= htmlspecialchars(
-                                    $error(
+                                    $getError(
                                         'date_of_birth'
                                     ),
                                     ENT_QUOTES,
@@ -453,7 +664,7 @@ if (
                         <select
                             id="gender"
                             name="gender"
-                            class="form-select<?= $fieldClass(
+                            class="form-select<?= $getFieldClass(
                                 'gender'
                             ) ?>"
                         >
@@ -493,13 +704,15 @@ if (
 
 
                         <?php if (
-                            $error('gender') !== ''
+                            $getError(
+                                'gender'
+                            ) !== ''
                         ): ?>
 
                             <div class="invalid-feedback">
 
                                 <?= htmlspecialchars(
-                                    $error(
+                                    $getError(
                                         'gender'
                                     ),
                                     ENT_QUOTES,
@@ -563,7 +776,7 @@ if (
                                 ENT_QUOTES,
                                 'UTF-8'
                             ) ?>"
-                            class="form-control<?= $fieldClass(
+                            class="form-control<?= $getFieldClass(
                                 'email'
                             ) ?>"
                             maxlength="150"
@@ -572,13 +785,17 @@ if (
 
 
                         <?php if (
-                            $error('email') !== ''
+                            $getError(
+                                'email'
+                            ) !== ''
                         ): ?>
 
                             <div class="invalid-feedback">
 
                                 <?= htmlspecialchars(
-                                    $error('email'),
+                                    $getError(
+                                        'email'
+                                    ),
                                     ENT_QUOTES,
                                     'UTF-8'
                                 ) ?>
@@ -620,7 +837,7 @@ if (
 
 
                 <!-- ================================================= -->
-                <!-- ADMINISTRATOR CONTROLLED INFORMATION               -->
+                <!-- EMPLOYMENT INFORMATION                              -->
                 <!-- ================================================= -->
 
                 <div
@@ -634,9 +851,11 @@ if (
 
                     <div class="row g-3">
 
+                        <!-- Employee Number -->
+
                         <div class="col-md-4">
 
-                            <div class="border rounded p-3">
+                            <div class="border rounded p-3 h-100">
 
                                 <div class="small text-muted mb-1">
                                     Employee Number
@@ -659,9 +878,11 @@ if (
                         </div>
 
 
+                        <!-- Employment Status -->
+
                         <div class="col-md-4">
 
-                            <div class="border rounded p-3">
+                            <div class="border rounded p-3 h-100">
 
                                 <div class="small text-muted mb-1">
                                     Employment Status
@@ -682,9 +903,11 @@ if (
                         </div>
 
 
+                        <!-- Date Employed -->
+
                         <div class="col-md-4">
 
-                            <div class="border rounded p-3">
+                            <div class="border rounded p-3 h-100">
 
                                 <div class="small text-muted mb-1">
                                     Date Employed
@@ -717,7 +940,7 @@ if (
 
 
                 <!-- ================================================= -->
-                <!-- BUTTONS                                             -->
+                <!-- PROFILE ACTIONS                                     -->
                 <!-- ================================================= -->
 
                 <div
@@ -737,6 +960,257 @@ if (
                         class="btn btn-primary"
                     >
                         Save Profile
+                    </button>
+
+                </div>
+
+            </form>
+
+            <!-- ===================================================== -->
+            <!-- IMPORTANT: PROFILE FORM ENDS HERE                     -->
+            <!-- ===================================================== -->
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================================= -->
+    <!-- PASSWORD SECURITY                                              -->
+    <!-- ============================================================= -->
+
+    <div
+        class="card border-0 shadow-sm mt-4"
+        id="password-security"
+    >
+
+        <div class="card-header bg-white border-bottom">
+
+            <h2 class="h5 fw-semibold mb-1">
+                Password & Account Security
+            </h2>
+
+            <p class="text-muted small mb-0">
+                Change your portal password to keep your account secure.
+            </p>
+
+        </div>
+
+
+        <div class="card-body p-4">
+
+            <!-- ===================================================== -->
+            <!-- PASSWORD FORM                                           -->
+            <!-- ===================================================== -->
+
+            <form
+                method="POST"
+                action="/SchoolERP/public/teacher/profile/password"
+                autocomplete="off"
+            >
+
+                <?= csrf_field() ?>
+
+
+                <div class="row g-3">
+
+                    <!-- Current Password -->
+
+                    <div class="col-12">
+
+                        <label
+                            for="current_password"
+                            class="form-label fw-semibold"
+                        >
+
+                            Current Password
+
+                            <span class="text-danger">
+                                *
+                            </span>
+
+                        </label>
+
+
+                        <input
+                            type="password"
+                            id="current_password"
+                            name="current_password"
+                            class="form-control<?= $getError(
+                                'current_password'
+                            ) !== ''
+                                ? ' is-invalid'
+                                : '' ?>"
+                            autocomplete="current-password"
+                            required
+                        >
+
+
+                        <?php if (
+                            $getError(
+                                'current_password'
+                            ) !== ''
+                        ): ?>
+
+                            <div class="invalid-feedback">
+
+                                <?= htmlspecialchars(
+                                    $getError(
+                                        'current_password'
+                                    ),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+
+                            </div>
+
+                        <?php endif; ?>
+
+                    </div>
+
+
+                    <!-- New Password -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="new_password"
+                            class="form-label fw-semibold"
+                        >
+
+                            New Password
+
+                            <span class="text-danger">
+                                *
+                            </span>
+
+                        </label>
+
+
+                        <input
+                            type="password"
+                            id="new_password"
+                            name="new_password"
+                            class="form-control<?= $getError(
+                                'new_password'
+                            ) !== ''
+                                ? ' is-invalid'
+                                : '' ?>"
+                            minlength="8"
+                            maxlength="72"
+                            autocomplete="new-password"
+                            required
+                        >
+
+
+                        <div class="form-text">
+                            Use at least 8 characters.
+                        </div>
+
+
+                        <?php if (
+                            $getError(
+                                'new_password'
+                            ) !== ''
+                        ): ?>
+
+                            <div class="invalid-feedback">
+
+                                <?= htmlspecialchars(
+                                    $getError(
+                                        'new_password'
+                                    ),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+
+                            </div>
+
+                        <?php endif; ?>
+
+                    </div>
+
+
+                    <!-- Confirm New Password -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="new_password_confirmation"
+                            class="form-label fw-semibold"
+                        >
+
+                            Confirm New Password
+
+                            <span class="text-danger">
+                                *
+                            </span>
+
+                        </label>
+
+
+                        <input
+                            type="password"
+                            id="new_password_confirmation"
+                            name="new_password_confirmation"
+                            class="form-control<?= $getError(
+                                'new_password_confirmation'
+                            ) !== ''
+                                ? ' is-invalid'
+                                : '' ?>"
+                            minlength="8"
+                            maxlength="72"
+                            autocomplete="new-password"
+                            required
+                        >
+
+
+                        <?php if (
+                            $getError(
+                                'new_password_confirmation'
+                            ) !== ''
+                        ): ?>
+
+                            <div class="invalid-feedback">
+
+                                <?= htmlspecialchars(
+                                    $getError(
+                                        'new_password_confirmation'
+                                    ),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+
+                            </div>
+
+                        <?php endif; ?>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- PASSWORD ACTIONS                                    -->
+                <!-- ================================================= -->
+
+                <div
+                    class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mt-4 pt-4 border-top"
+                >
+
+                    <div class="small text-muted">
+
+                        Your current session will remain active
+                        after changing your password.
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Change Password
                     </button>
 
                 </div>

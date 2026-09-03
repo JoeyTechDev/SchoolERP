@@ -11,6 +11,7 @@ use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Repositories\SubjectRepository;
 use SchoolERP\Repositories\TeacherAssignmentRepository;
 use SchoolERP\Services\TeacherAuthorizationService;
+use SchoolERP\Services\AuthenticationService;
 use DateTimeImmutable;
 use SchoolERP\Validation\Validator;
 use SchoolERP\Models\Student;
@@ -46,6 +47,11 @@ final class TeacherPortalController extends Controller
     private TeacherAuthorizationService $authorization;
 
     /**
+     * Authentication service.
+     */
+    private AuthenticationService $authentication;
+
+    /**
      * Constructor.
      */
     public function __construct(
@@ -55,7 +61,9 @@ final class TeacherPortalController extends Controller
         ClassroomRepository $classrooms,
         SubjectRepository $subjects,
         StudentRepository $students,
-        TeacherAuthorizationService $authorization
+        TeacherAuthorizationService $authorization,
+        AuthenticationService $authentication
+
     ) {
         parent::__construct(
             $views,
@@ -67,6 +75,7 @@ final class TeacherPortalController extends Controller
         $this->subjects = $subjects;
         $this->students = $students;
         $this->authorization = $authorization;
+        $this->authentication = $authentication;
     }
 
     /**
@@ -1004,6 +1013,155 @@ public function updateProfile(
 
     return $this->redirect(
         '/SchoolERP/public/teacher/profile'
+    );
+}
+
+/**
+ * Change the current teacher's password.
+ */
+public function changePassword(
+    Request $request
+): Response {
+    $forbidden = $this->requireRole([2]);
+
+    if ($forbidden !== null) {
+        return $forbidden;
+    }
+
+    /*
+     * Ensure the account is linked to a teacher profile.
+     */
+    $teacher =
+        $this->authorization->currentTeacher();
+
+    if ($teacher === null) {
+        return Response::make(
+            '403 Forbidden - No teacher profile is linked to this account.',
+            403
+        );
+    }
+
+    $currentPassword =
+        (string) $request->input(
+            'current_password',
+            ''
+        );
+
+    $newPassword =
+        (string) $request->input(
+            'new_password',
+            ''
+        );
+
+    $confirmPassword =
+        (string) $request->input(
+            'new_password_confirmation',
+            ''
+        );
+
+    $errors = [];
+
+    /*
+     * Current password is required.
+     */
+    if ($currentPassword === '') {
+        $errors['current_password'] =
+            'Please enter your current password.';
+    }
+
+    /*
+     * Password length.
+     */
+    if ($newPassword === '') {
+        $errors['new_password'] =
+            'Please enter a new password.';
+    } elseif (strlen($newPassword) < 8) {
+        $errors['new_password'] =
+            'The new password must be at least 8 characters long.';
+    } elseif (strlen($newPassword) > 72) {
+        $errors['new_password'] =
+            'The new password must not exceed 72 characters.';
+    }
+
+    /*
+     * Confirmation.
+     */
+    if (
+        $confirmPassword === ''
+    ) {
+        $errors['new_password_confirmation'] =
+            'Please confirm your new password.';
+    } elseif (
+        !hash_equals(
+            $newPassword,
+            $confirmPassword
+        )
+    ) {
+        $errors['new_password_confirmation'] =
+            'The password confirmation does not match.';
+    }
+
+    /*
+     * Prevent reusing the same password.
+     */
+    if (
+        $currentPassword !== ''
+        && $newPassword !== ''
+        && hash_equals(
+            $currentPassword,
+            $newPassword
+        )
+    ) {
+        $errors['new_password'] =
+            'Your new password must be different from your current password.';
+    }
+
+    if ($errors !== []) {
+
+        $this->session->flash(
+            '_errors',
+            $errors
+        );
+
+        return $this->redirect(
+            '/SchoolERP/public/teacher/profile'
+            . '#password-security'
+        );
+    }
+
+    /*
+     * AuthenticationService verifies the current password,
+     * hashes the new password, updates the account, and
+     * regenerates the session ID.
+     */
+    if (
+        !$this->authentication->changePassword(
+            $currentPassword,
+            $newPassword
+        )
+    ) {
+        $this->session->flash(
+            '_errors',
+            [
+                'current_password' =>
+                    'The current password is incorrect.',
+            ]
+        );
+
+        return $this->redirect(
+            '/SchoolERP/public/teacher/profile'
+            . '#password-security'
+        );
+    }
+
+    $this->session->flash(
+        'success',
+        'Your password has been changed successfully.'
+    );
+
+    return $this->redirect(
+        '/SchoolERP/public/teacher/profile'
+        . '#password-security'
     );
 }
 }

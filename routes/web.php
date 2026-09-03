@@ -547,3 +547,8 @@ $router->post(
     '/teacher/profile',
     [TeacherPortalController::class, 'updateProfile']
 );
+
+$router->post(
+    '/teacher/profile/password',
+    [TeacherPortalController::class, 'changePassword']
+);

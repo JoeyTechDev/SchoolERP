@@ -225,12 +225,23 @@ $homeUrl = $isTeacher
 
                             <li class="nav-item">
 
-                                <a
-                                    class="nav-link"
-                                    href="/SchoolERP/public/auth/logout"
+                                <form
+                                    method="POST"
+                                    action="/SchoolERP/public/auth/logout"
+                                    class="d-inline"
                                 >
-                                    Logout
-                                </a>
+
+                                    <?= csrf_field() ?>
+
+                                <button
+                                        type="submit"
+                                        class="nav-link btn btn-link border-0"
+                                        style="text-decoration: none;"
+                                    >
+                                     Logout
+                                    </button>
+
+                                </form>
 
                             </li>
 
@@ -363,12 +374,23 @@ $homeUrl = $isTeacher
 
                             <li class="nav-item">
 
-                                <a
-                                    class="nav-link"
-                                    href="/SchoolERP/public/auth/logout"
+                                <form
+                                    method="POST"
+                                    action="/SchoolERP/public/auth/logout"
+                                    class="d-inline"
                                 >
-                                    Logout
-                                </a>
+
+                                    <?= csrf_field() ?>
+
+                                    <button
+                                        type="submit"
+                                        class="nav-link btn btn-link border-0"
+                                        style="text-decoration: none;"
+                                    >
+                                        Logout
+                                    </button>
+
+                                </form>
 
                             </li>
 

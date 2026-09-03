@@ -27,7 +27,10 @@ final class AuthenticationService
     ): bool {
         $email = trim($email);
 
-        if ($email === '' || $password === '') {
+        if (
+            $email === ''
+            || $password === ''
+        ) {
             return false;
         }
 
@@ -39,10 +42,12 @@ final class AuthenticationService
             return false;
         }
 
-        if (!password_verify(
-            $password,
-            (string) $user->password
-        )) {
+        if (
+            !password_verify(
+                $password,
+                (string) $user->password
+            )
+        ) {
             return false;
         }
 
@@ -114,37 +119,65 @@ final class AuthenticationService
      */
     public function check(): bool
     {
-        return $this->session->has('user_id');
+        return $this->session->has(
+            'user_id'
+        );
     }
 
-/**
- * Log the current user out.
- */
-public function logout(): void
-{
-    if (!$this->check()) {
-        return;
+    /**
+     * Log the current user out.
+     */
+    public function logout(): void
+    {
+        if (!$this->check()) {
+            return;
+        }
+
+        /*
+         * Remove authentication state.
+         */
+        $this->session->forget(
+            'user_id'
+        );
+
+        $this->session->forget(
+            'role_id'
+        );
+
+        $this->session->forget(
+            'first_name'
+        );
+
+        $this->session->forget(
+            'last_name'
+        );
+
+        $this->session->forget(
+            'email'
+        );
+
+        $this->session->forget(
+            'status'
+        );
+
+        $this->session->forget(
+            'login_time'
+        );
+
+        $this->session->forget(
+            'last_activity'
+        );
+
+        $this->session->forget(
+            'user_agent'
+        );
+
+        /*
+         * Regenerate the session ID to prevent session fixation
+         * and invalidate the previous authenticated session ID.
+         */
+        $this->session->regenerate();
     }
-
-    /*
-     * Remove authentication state.
-     */
-    $this->session->forget('user_id');
-    $this->session->forget('role_id');
-    $this->session->forget('first_name');
-    $this->session->forget('last_name');
-    $this->session->forget('email');
-    $this->session->forget('status');
-    $this->session->forget('login_time');
-    $this->session->forget('last_activity');
-    $this->session->forget('user_agent');
-
-    /*
-     * Regenerate the session ID to prevent session fixation
-     * and invalidate the previous authenticated session ID.
-     */
-    $this->session->regenerate();
-}
 
     /**
      * Get the current authenticated user ID.
@@ -172,5 +205,94 @@ public function logout(): void
         return (int) $this->session->get(
             'role_id'
         );
+    }
+
+    /**
+     * Change the current user's password.
+     *
+     * The current password must be correct before the new
+     * password is accepted.
+     */
+    public function changePassword(
+        string $currentPassword,
+        string $newPassword
+    ): bool {
+        if (!$this->check()) {
+            return false;
+        }
+
+        if (
+            $currentPassword === ''
+            || $newPassword === ''
+        ) {
+            return false;
+        }
+
+        $userId = $this->userId();
+
+        if ($userId === null) {
+            return false;
+        }
+
+        $user = $this->users->find(
+            $userId
+        );
+
+        if ($user === null) {
+            return false;
+        }
+
+        /*
+         * Verify the existing password.
+         */
+        if (
+            !password_verify(
+                $currentPassword,
+                (string) $user->password
+            )
+        ) {
+            return false;
+        }
+
+        /*
+         * Never store a plain-text password.
+         */
+        $hashedPassword =
+            password_hash(
+                $newPassword,
+                PASSWORD_DEFAULT
+            );
+
+        if ($hashedPassword === false) {
+            return false;
+        }
+
+        /*
+         * Update the password.
+         */
+        $updated = $user->update([
+            'password' =>
+                $hashedPassword,
+        ]);
+
+        if ($updated === false) {
+            return false;
+        }
+
+        /*
+         * Regenerate the session ID after a credential
+         * change without logging the user out.
+         */
+        $this->session->regenerate();
+
+        /*
+         * Refresh activity timestamp.
+         */
+        $this->session->put(
+            'last_activity',
+            time()
+        );
+
+        return true;
     }
 }
