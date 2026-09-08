@@ -12,6 +12,7 @@ use SchoolERP\Repositories\AttendanceRepository;
 use SchoolERP\Repositories\ClassroomRepository;
 use SchoolERP\Repositories\StudentRepository;
 use SchoolERP\Repositories\TermRepository;
+use SchoolERP\Repositories\TeacherAssignmentRepository;
 use SchoolERP\Services\TeacherAuthorizationService;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\View\ViewFactory;
@@ -44,6 +45,11 @@ final class AttendanceController extends Controller
     private TermRepository $terms;
 
     /**
+    * Teacher assignment repository.
+    */
+    private TeacherAssignmentRepository $assignments;
+
+    /**
      * Teacher authorization service.
      */
     private TeacherAuthorizationService $authorization;
@@ -59,6 +65,7 @@ final class AttendanceController extends Controller
         StudentRepository $students,
         AcademicSessionRepository $sessions,
         TermRepository $terms,
+        TeacherAssignmentRepository $assignments,
         TeacherAuthorizationService $authorization
     ) {
         parent::__construct(
@@ -71,6 +78,7 @@ final class AttendanceController extends Controller
         $this->students = $students;
         $this->sessions = $sessions;
         $this->terms = $terms;
+        $this->assignments = $assignments;
         $this->authorization = $authorization;
     }
 

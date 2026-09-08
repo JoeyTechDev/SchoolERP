@@ -705,11 +705,7 @@ public function student(
     }
 
     /*
-     * The authorization service is the security boundary.
-     *
-     * A teacher cannot access a student outside an
-     * assigned classroom even if the ID is manually
-     * entered into the URL.
+     * Authorization remains the first security boundary.
      */
     if (
         !$this->authorization->canManageStudent(
@@ -722,23 +718,60 @@ public function student(
         );
     }
 
-    $student =
-        $this->students->find(
-            $id
-        );
+    /*
+     * Load the student.
+     */
+    $student = $this->students->find(
+        $id
+    );
 
     if ($student === null) {
         return Response::notFound();
     }
 
     /*
-     * Load classroom relationship for the existing
-     * students.show view.
+     * Resolve the student's classroom ID.
      */
-    $student->setRelation(
-        'classroom',
-        $student->classroom()->get()
+    $studentClassroomId = (int) (
+        $student->classroom_id ?? 0
     );
+
+    /*
+     * Resolve the classroom name from the same classroom
+     * lookup already used successfully by the Teacher Portal.
+     */
+    $classroomName = '';
+
+    if ($studentClassroomId > 0) {
+
+        $classrooms =
+            $this->classrooms->allOrdered();
+
+        foreach (
+            $classrooms as $classroom
+        ) {
+            $classroomId = (int) (
+                $classroom['id'] ?? 0
+            );
+
+            if (
+                $classroomId ===
+                $studentClassroomId
+            ) {
+                $classroomName = trim(
+                    (string) (
+                        $classroom['name'] ?? ''
+                    )
+                );
+
+                break;
+            }
+        }
+    }
+
+    if ($classroomName === '') {
+        $classroomName = 'Not assigned';
+    }
 
     return $this->view(
         'teacher.student',
@@ -748,9 +781,12 @@ public function student(
 
             'student' =>
                 $student,
+
+            'classroomName' =>
+                $classroomName,
         ]
     );
-}
+} 
 
 /**
  * Display the current teacher's profile.

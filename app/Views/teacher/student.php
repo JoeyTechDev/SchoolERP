@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 /**
  * @var \SchoolERP\Models\Student $student
+ * @var string $classroomName
  */
 
 if (!isset($student)) {
@@ -42,24 +43,15 @@ if ($studentName === '') {
     $studentName = 'Unnamed Student';
 }
 
-$classroomName = '';
-
-$classroom = $student->classroom
-    ?? null;
-
-if (
-    is_object($classroom)
-) {
-    $classroomName = trim(
-        (string) (
-            $classroom->name ?? ''
-        )
-    );
-}
+$classroomName = trim(
+    (string) (
+        $classroomName
+        ?? 'Not assigned'
+    )
+);
 
 if ($classroomName === '') {
-    $classroomName =
-        'Not assigned';
+    $classroomName = 'Not assigned';
 }
 
 $dateOfBirth = '';

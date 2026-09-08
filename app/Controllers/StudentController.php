@@ -60,7 +60,7 @@ final class StudentController extends Controller
     public function index(
         Request $request
     ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
@@ -110,7 +110,7 @@ final class StudentController extends Controller
     public function show(
         int $id
     ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
@@ -165,6 +165,7 @@ final class StudentController extends Controller
     /**
      * Store a new student.
      */
+
     public function store(
         Request $request
     ): Response {
@@ -712,7 +713,7 @@ final class StudentController extends Controller
     public function destroy(
         int $id
     ): Response {
-        $forbidden = $this->requireRole([1, 2]);
+        $forbidden = $this->requireRole([1]);
 
         if ($forbidden !== null) {
             return $forbidden;
