@@ -203,6 +203,17 @@ $homeUrl = $isTeacher
 
                                 <a
                                     class="nav-link"
+                                    href="/SchoolERP/public/attendance/history"
+                                >
+                                    Attendance History
+                                </a>
+
+                            </li>
+
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
                                     href="/SchoolERP/public/academic-results"
                                 >
                                     Academic Results
@@ -347,6 +358,16 @@ $homeUrl = $isTeacher
 
                             </li>
 
+                            <li class="nav-item">
+
+                                <a
+                                    class="nav-link"
+                                    href="/SchoolERP/public/attendance/history"
+                                >
+                                    Attendance History
+                                </a>
+
+                            </li>
 
                             <li class="nav-item">
 
