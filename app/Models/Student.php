@@ -25,6 +25,7 @@ final class Student extends Model
         'date_of_birth',
         'gender',
         'classroom_id',
+        'user_id',
     ];
 
     /**
@@ -34,11 +35,22 @@ final class Student extends Model
      */
     protected array $casts = [
         'id' => 'int',
+        'user_id' => 'int',
         'classroom_id' => 'int',
-        'date_of_birth' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * Student belongs to one login user account.
+     */
+    public function user()
+    {
+        return $this->belongsTo(
+            User::class,
+            'user_id'
+        );
+    }
 
     /**
      * Student belongs to one classroom.

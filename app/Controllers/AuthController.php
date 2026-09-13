@@ -61,59 +61,82 @@ final class AuthController extends Controller
         );
     }
 
-    /**
-     * Authenticate the user.
-     */
-    public function login(
-        Request $request
-    ): Response {
-        $email = trim(
-            (string) $request->input('email')
-        );
+/**
+ * Authenticate the user.
+ */
+public function login(
+    Request $request
+): Response {
+    $email = trim(
+        (string) $request->input('email')
+    );
 
-        $password = (string) $request->input('password');
+    $password = (string) $request->input(
+        'password'
+    );
 
-        if ($email === '') {
-            return $this->loginError(
-                'Email is required.',
-                $email
-            );
-        }
-
-        if (!filter_var(
-            $email,
-            FILTER_VALIDATE_EMAIL
-        )) {
-            return $this->loginError(
-                'Please enter a valid email address.',
-                $email
-            );
-        }
-
-        if ($password === '') {
-            return $this->loginError(
-                'Password is required.',
-                $email
-            );
-        }
-
-        if (!$this->authentication->attempt(
-            $email,
-            $password
-        )) {
-            return $this->loginError(
-                'Invalid email or password.',
-                $email
-            );
-        }
-
-        /*
-         * Redirect authenticated users to the framework dashboard.
-         */
-        return $this->redirect(
-            '/SchoolERP/public/dashboard'
+    if ($email === '') {
+        return $this->loginError(
+            'Email is required.',
+            $email
         );
     }
+
+    if (!filter_var(
+        $email,
+        FILTER_VALIDATE_EMAIL
+    )) {
+        return $this->loginError(
+            'Please enter a valid email address.',
+            $email
+        );
+    }
+
+    if ($password === '') {
+        return $this->loginError(
+            'Password is required.',
+            $email
+        );
+    }
+
+    if (!$this->authentication->attempt(
+        $email,
+        $password
+    )) {
+        return $this->loginError(
+            'Invalid email or password.',
+            $email
+        );
+    }
+
+    /*
+     * Redirect according to the authenticated user's role.
+     *
+     * Role 1 = Administrator
+     * Role 2 = Teacher
+     * Role 3 = Student
+     */
+    $roleId =
+        $this->authentication->roleId();
+
+    return match ($roleId) {
+        1 => $this->redirect(
+            '/SchoolERP/public/dashboard'
+        ),
+
+        2 => $this->redirect(
+            '/SchoolERP/public/teacher/dashboard'
+        ),
+
+        3 => $this->redirect(
+            '/SchoolERP/public/student/dashboard'
+        ),
+
+        default => $this->redirect(
+            '/SchoolERP/public/dashboard'
+        ),
+    };
+}
 
     /**
      * Log the current user out.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use SchoolERP\Controllers\DashboardController;
 use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
+use SchoolERP\Controllers\StudentPortalController;
 use SchoolERP\Controllers\SubjectController;
 use SchoolERP\Controllers\AcademicSessionController;
 use SchoolERP\Controllers\AcademicResultController;
@@ -58,42 +59,6 @@ $router->post(
 $router->get(
     '/dashboard',
     [DashboardController::class, 'index']
-);
-
-// Classroom list
-$router->get(
-    '/classrooms',
-    [ClassroomController::class, 'index']
-);
-
-// Create classroom form
-$router->get(
-    '/classrooms/create',
-    [ClassroomController::class, 'create']
-);
-
-// Store classroom
-$router->post(
-    '/classrooms',
-    [ClassroomController::class, 'store']
-);
-
-// Edit classroom form
-$router->get(
-    '/classrooms/{id}/edit',
-    [ClassroomController::class, 'edit']
-);
-
-// Update classroom
-$router->post(
-    '/classrooms/{id}/update',
-    [ClassroomController::class, 'update']
-);
-
-// Delete classroom
-$router->post(
-    '/classrooms/{id}/delete',
-    [ClassroomController::class, 'destroy']
 );
 
 /*
@@ -413,19 +378,9 @@ $router->get(
     [AttendanceHistoryController::class, 'index']
 );
 
-$router->post(
-    '/report-card/summary',
-    [ReportCardController::class, 'saveSummary']
-);
-
-$router->get(
-    '/report-card/print',
-    [ReportCardController::class, 'print']
-);
-
 /*
 |--------------------------------------------------------------------------
-| Teacher Routes
+| Teacher Management Routes
 |--------------------------------------------------------------------------
 */
 
@@ -464,11 +419,13 @@ $router->get(
     [TeacherController::class, 'show']
 );
 
+// Add teacher assignment
 $router->post(
     '/teachers/{id}/assignments',
     [TeacherController::class, 'storeAssignment']
 );
 
+// Remove teacher assignment
 $router->post(
     '/teachers/{id}/assignments/{assignmentId}/delete',
     [TeacherController::class, 'destroyAssignment']
@@ -476,7 +433,7 @@ $router->post(
 
 /*
 |--------------------------------------------------------------------------
-| Teacher Portal
+| Teacher Portal Routes
 |--------------------------------------------------------------------------
 */
 
@@ -500,44 +457,6 @@ $router->get(
     [TeacherPortalController::class, 'student']
 );
 
-/*
-|--------------------------------------------------------------------------
-| CSRF Test Routes
-|--------------------------------------------------------------------------
-*/
-
-$router->get('/csrf-test', function () {
-
-    return Response::make(
-        '
-        <h2>CSRF Test Form</h2>
-
-        <form method="POST" action="">
-
-            ' . csrf_field() . '
-
-            <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-            >
-
-            <button type="submit">
-                Submit
-            </button>
-
-        </form>
-        '
-    );
-});
-
-$router->post('/csrf-test', function (Request $request) {
-
-    return Response::make(
-        'CSRF Verification Passed!'
-    );
-});
-
 $router->get(
     '/teacher/profile',
     [TeacherPortalController::class, 'profile']
@@ -551,4 +470,85 @@ $router->post(
 $router->post(
     '/teacher/profile/password',
     [TeacherPortalController::class, 'changePassword']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Student Portal
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/student',
+    [StudentPortalController::class, 'dashboard']
+);
+
+$router->get(
+    '/student/dashboard',
+    [StudentPortalController::class, 'dashboard']
+);
+
+$router->get(
+    '/student/profile',
+    [StudentPortalController::class, 'profile']
+);
+
+$router->post(
+    '/student/profile',
+    [StudentPortalController::class, 'updateProfile']
+);
+
+$router->post(
+    '/student/profile/password',
+    [StudentPortalController::class, 'changePassword']
+);
+
+$router->get(
+    '/student/results',
+    [StudentPortalController::class, 'results']
+);
+
+$router->get(
+    '/student/attendance',
+    [StudentPortalController::class, 'attendance']
+);
+
+/*
+|--------------------------------------------------------------------------
+| CSRF Test Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/csrf-test',
+    function () {
+        return Response::make(
+            '
+            <h2>CSRF Test Form</h2>
+
+            <form method="POST" action="">
+                ' . csrf_field() . '
+
+                <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                >
+
+                <button type="submit">
+                    Submit
+                </button>
+            </form>
+            '
+        );
+    }
+);
+
+$router->post(
+    '/csrf-test',
+    function (Request $request) {
+        return Response::make(
+            'CSRF Verification Passed!'
+        );
+    }
 );

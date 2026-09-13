@@ -172,4 +172,32 @@ final class StudentRepository extends Repository
             $pagination->currentPage()
         );
     }
+
+/**
+ * Find a student by linked user account ID.
+ */
+public function findByUserId(
+    int $userId
+): ?Student {
+    if ($userId <= 0) {
+        return null;
+    }
+
+    $record = $this->model
+        ->query()
+        ->where(
+            'user_id',
+            '=',
+            $userId
+        )
+        ->first();
+
+    if ($record === null) {
+        return null;
+    }
+
+    return (new Student())->fill(
+        $record
+    );
+}
 }
