@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SchoolERP\Models;
 
 use SchoolERP\ORM\Model;
+use SchoolERP\Models\User;
 
 final class Student extends Model
 {

@@ -171,44 +171,46 @@ if (
     <!-- ============================================================= -->
 
     <div
-        class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4"
-    >
+    class="d-flex flex-column flex-md-row
+           justify-content-between
+           align-items-md-center
+           gap-3 mb-4"
+>
+    <div>
+        <h1 class="h3 fw-bold mb-1">
+            Student Details
+        </h1>
 
-        <div>
-
-            <h1 class="h3 fw-bold mb-1">
-                Student Details
-            </h1>
-
-            <p class="text-muted mb-0">
-                View the complete student profile and enrollment information.
-            </p>
-
-        </div>
-
-
-        <div class="d-flex gap-2">
-
-            <a
-                href="/SchoolERP/public/students"
-                class="btn btn-outline-secondary"
-            >
-                <i class="bi bi-arrow-left me-1"></i>
-                Back to Students
-            </a>
-
-            <a
-                href="/SchoolERP/public/students/<?= (int) $student->id ?>/edit"
-                class="btn btn-primary"
-            >
-                <i class="bi bi-pencil me-1"></i>
-                Edit Student
-            </a>
-
-        </div>
-
+        <p class="text-muted mb-0">
+            View and manage student information.
+        </p>
     </div>
 
+    <div class="d-flex gap-2">
+
+        <a
+            href="/SchoolERP/public/students/<?= (int) $student->id ?>/account"
+            class="btn btn-primary"
+        >
+            Student Login Account
+        </a>
+
+        <a
+            href="/SchoolERP/public/students/<?= (int) $student->id ?>/edit"
+            class="btn btn-outline-secondary"
+        >
+            Edit Student
+        </a>
+
+        <a
+            href="/SchoolERP/public/students"
+            class="btn btn-outline-secondary"
+        >
+            Back to Students
+        </a>
+
+    </div>
+</div>
 
     <!-- ============================================================= -->
     <!-- PROFILE CARD                                                   -->

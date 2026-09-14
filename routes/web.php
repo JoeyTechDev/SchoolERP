@@ -5,6 +5,7 @@ declare(strict_types=1);
 use SchoolERP\Controllers\DashboardController;
 use SchoolERP\Controllers\ClassroomController;
 use SchoolERP\Controllers\StudentController;
+use SchoolERP\Controllers\StudentAccountController;
 use SchoolERP\Controllers\StudentPortalController;
 use SchoolERP\Controllers\SubjectController;
 use SchoolERP\Controllers\AcademicSessionController;
@@ -63,92 +64,152 @@ $router->get(
 
 /*
 |--------------------------------------------------------------------------
-| Student Routes
-|--------------------------------------------------------------------------
-*/
-
-// Student list
-$router->get(
-    '/students',
-    [StudentController::class, 'index']
-);
-
-// Create student form
-$router->get(
-    '/students/create',
-    [StudentController::class, 'create']
-);
-
-// Store student
-$router->post(
-    '/students',
-    [StudentController::class, 'store']
-);
-
-// Edit student form
-$router->get(
-    '/students/{id}/edit',
-    [StudentController::class, 'edit']
-);
-
-// Update student
-$router->post(
-    '/students/{id}/update',
-    [StudentController::class, 'update']
-);
-
-// Delete student
-$router->post(
-    '/students/{id}/delete',
-    [StudentController::class, 'destroy']
-);
-
-// Student details
-$router->get(
-    '/students/{id}',
-    [StudentController::class, 'show']
-);
-
-/*
-|--------------------------------------------------------------------------
 | Classroom Routes
 |--------------------------------------------------------------------------
 */
 
-// Classroom list
 $router->get(
     '/classrooms',
     [ClassroomController::class, 'index']
 );
 
-// Create classroom form
 $router->get(
     '/classrooms/create',
     [ClassroomController::class, 'create']
 );
 
-// Store classroom
 $router->post(
     '/classrooms',
     [ClassroomController::class, 'store']
 );
 
-// Edit classroom form
 $router->get(
     '/classrooms/{id}/edit',
     [ClassroomController::class, 'edit']
 );
 
-// Update classroom
 $router->post(
     '/classrooms/{id}/update',
     [ClassroomController::class, 'update']
 );
 
-// Delete classroom
 $router->post(
     '/classrooms/{id}/delete',
     [ClassroomController::class, 'destroy']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Student Routes
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * Student list.
+ */
+$router->get(
+    '/students',
+    [StudentController::class, 'index']
+);
+
+/*
+ * Create student form.
+ */
+$router->get(
+    '/students/create',
+    [StudentController::class, 'create']
+);
+
+/*
+ * Store student.
+ */
+$router->post(
+    '/students',
+    [StudentController::class, 'store']
+);
+
+/*
+ * Edit student form.
+ */
+$router->get(
+    '/students/{id}/edit',
+    [StudentController::class, 'edit']
+);
+
+/*
+ * Update student.
+ */
+$router->post(
+    '/students/{id}/update',
+    [StudentController::class, 'update']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Student Account Management
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * Student account management page.
+ */
+$router->get(
+    '/students/{id}/account',
+    [StudentAccountController::class, 'show']
+);
+
+/*
+ * Create student login account.
+ */
+$router->post(
+    '/students/{id}/account',
+    [StudentAccountController::class, 'store']
+);
+
+/*
+ * Reset student password.
+ */
+$router->post(
+    '/students/{id}/account/reset-password',
+    [StudentAccountController::class, 'resetPassword']
+);
+
+/*
+ * Suspend student account.
+ */
+$router->post(
+    '/students/{id}/account/suspend',
+    [StudentAccountController::class, 'suspend']
+);
+
+/*
+ * Activate student account.
+ */
+$router->post(
+    '/students/{id}/account/activate',
+    [StudentAccountController::class, 'activate']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Student Delete
+|--------------------------------------------------------------------------
+*/
+
+$router->post(
+    '/students/{id}/delete',
+    [StudentController::class, 'destroy']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Student Details
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/students/{id}',
+    [StudentController::class, 'show']
 );
 
 /*
@@ -157,43 +218,36 @@ $router->post(
 |--------------------------------------------------------------------------
 */
 
-// Subject list
 $router->get(
     '/subjects',
     [SubjectController::class, 'index']
 );
 
-// Create subject form
 $router->get(
     '/subjects/create',
     [SubjectController::class, 'create']
 );
 
-// Store subject
 $router->post(
     '/subjects',
     [SubjectController::class, 'store']
 );
 
-// Edit subject form
 $router->get(
     '/subjects/{id}/edit',
     [SubjectController::class, 'edit']
 );
 
-// Update subject
 $router->post(
     '/subjects/{id}/update',
     [SubjectController::class, 'update']
 );
 
-// Activate subject
 $router->post(
     '/subjects/{id}/activate',
     [SubjectController::class, 'activate']
 );
 
-// Deactivate subject
 $router->post(
     '/subjects/{id}/deactivate',
     [SubjectController::class, 'deactivate']
@@ -292,37 +346,49 @@ $router->post(
 |--------------------------------------------------------------------------
 */
 
-// Academic result list/filter
+/*
+ * Academic result list/filter.
+ */
 $router->get(
     '/academic-results',
     [AcademicResultController::class, 'index']
 );
 
-// Create result form
+/*
+ * Create result form.
+ */
 $router->get(
     '/academic-results/create',
     [AcademicResultController::class, 'create']
 );
 
-// Store result
+/*
+ * Store result.
+ */
 $router->post(
     '/academic-results',
     [AcademicResultController::class, 'store']
 );
 
-// Edit result form
+/*
+ * Edit result.
+ */
 $router->get(
     '/academic-results/{id}/edit',
     [AcademicResultController::class, 'edit']
 );
 
-// Update result
+/*
+ * Update result.
+ */
 $router->post(
     '/academic-results/{id}/update',
     [AcademicResultController::class, 'update']
 );
 
-// Delete result
+/*
+ * Delete result.
+ */
 $router->post(
     '/academic-results/{id}/delete',
     [AcademicResultController::class, 'destroy']
@@ -334,19 +400,28 @@ $router->post(
 |--------------------------------------------------------------------------
 */
 
-$router->get(
-    '/report-card/print',
-    [ReportCardController::class, 'print']
-);
-
+/*
+ * Report card main page.
+ */
 $router->get(
     '/report-card',
     [ReportCardController::class, 'index']
 );
 
+/*
+ * Save report card summary.
+ */
 $router->post(
     '/report-card/summary',
     [ReportCardController::class, 'saveSummary']
+);
+
+/*
+ * Printable report card.
+ */
+$router->get(
+    '/report-card/print',
+    [ReportCardController::class, 'print']
 );
 
 /*
@@ -355,13 +430,17 @@ $router->post(
 |--------------------------------------------------------------------------
 */
 
-// Daily attendance
+/*
+ * Daily attendance.
+ */
 $router->get(
     '/attendance',
     [AttendanceController::class, 'index']
 );
 
-// Save classroom attendance
+/*
+ * Save classroom attendance.
+ */
 $router->post(
     '/attendance',
     [AttendanceController::class, 'store']
@@ -380,7 +459,7 @@ $router->get(
 
 /*
 |--------------------------------------------------------------------------
-| Teacher Management Routes
+| Teacher Routes
 |--------------------------------------------------------------------------
 */
 
@@ -419,13 +498,11 @@ $router->get(
     [TeacherController::class, 'show']
 );
 
-// Add teacher assignment
 $router->post(
     '/teachers/{id}/assignments',
     [TeacherController::class, 'storeAssignment']
 );
 
-// Remove teacher assignment
 $router->post(
     '/teachers/{id}/assignments/{assignmentId}/delete',
     [TeacherController::class, 'destroyAssignment']
@@ -474,7 +551,7 @@ $router->post(
 
 /*
 |--------------------------------------------------------------------------
-| Student Portal
+| Student Portal Routes
 |--------------------------------------------------------------------------
 */
 
@@ -516,6 +593,10 @@ $router->get(
 /*
 |--------------------------------------------------------------------------
 | CSRF Test Routes
+|--------------------------------------------------------------------------
+|
+| Development-only routes.
+| Remove these before production deployment.
 |--------------------------------------------------------------------------
 */
 
