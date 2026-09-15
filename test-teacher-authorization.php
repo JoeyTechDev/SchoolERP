@@ -15,7 +15,7 @@ use SchoolERP\Session\SessionInterface;
 | Test session
 |--------------------------------------------------------------------------
 |
-| Implements the complete SessionInterface.
+| Lightweight in-memory implementation of SessionInterface.
 |
 */
 
@@ -40,30 +40,20 @@ final class TestSession implements SessionInterface
      *
      * @param array<string,mixed> $data
      */
-    public function __construct(
-        array $data = []
-    ) {
+    public function __construct(array $data = [])
+    {
         $this->data = $data;
     }
 
-    /**
-     * Start the test session.
-     */
     public function start(): void
     {
     }
 
-    /**
-     * Determine whether the test session is started.
-     */
     public function isStarted(): bool
     {
         return true;
     }
 
-    /**
-     * Store a value.
-     */
     public function put(
         string $key,
         mixed $value
@@ -71,43 +61,27 @@ final class TestSession implements SessionInterface
         $this->data[$key] = $value;
     }
 
-    /**
-     * Retrieve a value.
-     */
     public function get(
         string $key,
         mixed $default = null
     ): mixed {
-        return $this->data[$key]
-            ?? $default;
+        return $this->data[$key] ?? $default;
     }
 
-    /**
-     * Determine whether a key exists.
-     */
-    public function has(
-        string $key
-    ): bool {
+    public function has(string $key): bool
+    {
         return array_key_exists(
             $key,
             $this->data
         );
     }
 
-    /**
-     * Remove a value.
-     */
-    public function forget(
-        string $key
-    ): void {
-        unset(
-            $this->data[$key]
-        );
+    public function forget(string $key): void
+    {
+        unset($this->data[$key]);
     }
 
     /**
-     * Get all session values.
-     *
      * @return array<string,mixed>
      */
     public function all(): array
@@ -115,17 +89,11 @@ final class TestSession implements SessionInterface
         return $this->data;
     }
 
-    /**
-     * Regenerate session ID.
-     */
     public function regenerate(): bool
     {
         return true;
     }
 
-    /**
-     * Destroy the test session.
-     */
     public function destroy(): bool
     {
         $this->data = [];
@@ -134,52 +102,74 @@ final class TestSession implements SessionInterface
         return true;
     }
 
-    /**
-     * Clear all session data.
-     */
     public function flush(): void
     {
         $this->data = [];
     }
 
-    /**
-     * Store or retrieve flash data.
-     */
     public function flash(
         string $key,
         mixed $value = null
     ): mixed {
         if (func_num_args() === 2) {
-            $this->flashData[$key] =
-                $value;
+            $this->flashData[$key] = $value;
 
             return null;
         }
 
-        return $this->flashData[$key]
-            ?? null;
+        return $this->flashData[$key] ?? null;
     }
 
-    /**
-     * Determine whether a flash value exists.
-     */
-    public function hasFlash(
-        string $key
-    ): bool {
+    public function hasFlash(string $key): bool
+    {
         return array_key_exists(
             $key,
             $this->flashData
         );
     }
 
-    /**
-     * Clear flash values.
-     */
     public function clearFlash(): void
     {
         $this->flashData = [];
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Test helpers
+|--------------------------------------------------------------------------
+*/
+
+$total = 0;
+$passed = 0;
+$failed = 0;
+
+function check(
+    string $name,
+    bool $condition
+): void {
+    global $total;
+    global $passed;
+    global $failed;
+
+    $total++;
+
+    if ($condition) {
+        $passed++;
+        echo $name . ': PASSED' . PHP_EOL;
+
+        return;
+    }
+
+    $failed++;
+    echo $name . ': FAILED' . PHP_EOL;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Test header
+|--------------------------------------------------------------------------
+*/
 
 echo "TEACHER AUTHORIZATION TEST\n";
 echo "===========================\n\n";
@@ -201,7 +191,7 @@ $studentRepository =
 
 /*
 |--------------------------------------------------------------------------
-| Find teacher with a linked user account.
+| Find teacher with a linked user account
 |--------------------------------------------------------------------------
 */
 
@@ -220,15 +210,18 @@ foreach (
 
     if ($candidateUserId > 0) {
         $teacherRecord = $candidate;
+
         break;
     }
 }
 
 if ($teacherRecord === null) {
-    echo "No teacher profile is linked to a user account.\n";
-    echo "Link one Teacher record to a users.id first.\n";
-    echo "Authorization test cannot continue yet.\n";
-    exit(0);
+    echo "No teacher profile is linked to a user account."
+        . PHP_EOL;
+    echo "Authorization test cannot continue."
+        . PHP_EOL;
+
+    exit(1);
 }
 
 $userId = (int) (
@@ -239,11 +232,14 @@ $teacherId = (int) (
     $teacherRecord['id']
 );
 
-echo "Teacher/User Link: PASSED\n";
+check(
+    'Teacher/User Link',
+    $userId > 0 && $teacherId > 0
+);
 
 /*
 |--------------------------------------------------------------------------
-| Find an active assignment.
+| Find active assignments for the teacher
 |--------------------------------------------------------------------------
 */
 
@@ -266,14 +262,18 @@ foreach (
         ) === 1
     ) {
         $activeAssignment = $assignment;
+
         break;
     }
 }
 
 if ($activeAssignment === null) {
-    echo "No active assignment found for this teacher.\n";
-    echo "Create one teacher/classroom/subject assignment first.\n";
-    exit(0);
+    echo "No active assignment found for this teacher."
+        . PHP_EOL;
+    echo "Authorization test cannot continue."
+        . PHP_EOL;
+
+    exit(1);
 }
 
 $classroomId = (int) (
@@ -284,11 +284,15 @@ $subjectId = (int) (
     $activeAssignment->subject_id
 );
 
-echo "Active Assignment: PASSED\n";
+check(
+    'Active Assignment',
+    $classroomId > 0
+        && $subjectId > 0
+);
 
 /*
 |--------------------------------------------------------------------------
-| Teacher authorization instance.
+| Teacher authorization instance
 |--------------------------------------------------------------------------
 */
 
@@ -307,71 +311,322 @@ $authorization =
 
 /*
 |--------------------------------------------------------------------------
-| Current teacher lookup.
+| Role checks
+|--------------------------------------------------------------------------
+*/
+
+check(
+    'Teacher Role Detection',
+    $authorization->isTeacher()
+);
+
+check(
+    'Teacher Is Not Administrator',
+    !$authorization->isAdmin()
+);
+
+/*
+|--------------------------------------------------------------------------
+| Current teacher lookup
 |--------------------------------------------------------------------------
 */
 
 $currentTeacher =
     $authorization->currentTeacher();
 
-echo $currentTeacher !== null
-    ? "Current Teacher Lookup: PASSED\n"
-    : "Current Teacher Lookup: FAILED\n";
+check(
+    'Current Teacher Lookup',
+    $currentTeacher !== null
+);
+
+check(
+    'Current Teacher ID',
+    $authorization->currentTeacherId()
+        === $teacherId
+);
 
 /*
 |--------------------------------------------------------------------------
-| Current teacher ID.
+| Assigned classroom
 |--------------------------------------------------------------------------
 */
 
-echo $authorization->currentTeacherId()
-    === $teacherId
-    ? "Current Teacher ID: PASSED\n"
-    : "Current Teacher ID: FAILED\n";
+check(
+    'Assigned Classroom Access',
+    $authorization->canAccessClassroom(
+        $classroomId
+    )
+);
 
 /*
 |--------------------------------------------------------------------------
-| Assigned classroom.
+| Invalid classroom
 |--------------------------------------------------------------------------
 */
 
-echo $authorization->canAccessClassroom(
-    $classroomId
-)
-    ? "Assigned Classroom Access: PASSED\n"
-    : "Assigned Classroom Access: FAILED\n";
+check(
+    'Invalid Classroom Protection',
+    !$authorization->canAccessClassroom(
+        -1
+    )
+);
 
 /*
 |--------------------------------------------------------------------------
-| Assigned subject.
+| Assigned subject
 |--------------------------------------------------------------------------
 */
 
-echo $authorization->canManageSubject(
-    $classroomId,
-    $subjectId
-)
-    ? "Assigned Subject Access: PASSED\n"
-    : "Assigned Subject Access: FAILED\n";
+check(
+    'Assigned Subject Access',
+    $authorization->canManageSubject(
+        $classroomId,
+        $subjectId
+    )
+);
 
 /*
 |--------------------------------------------------------------------------
-| Wrong subject must fail.
+| Invalid subject
 |--------------------------------------------------------------------------
 */
 
-$wrongSubjectId = $subjectId + 99999;
-
-echo !$authorization->canManageSubject(
-    $classroomId,
-    $wrongSubjectId
-)
-    ? "Unassigned Subject Protection: PASSED\n"
-    : "Unassigned Subject Protection: FAILED\n";
+check(
+    'Invalid Subject Protection',
+    !$authorization->canManageSubject(
+        $classroomId,
+        -1
+    )
+);
 
 /*
 |--------------------------------------------------------------------------
-| Administrator bypass.
+| Unassigned subject
+|--------------------------------------------------------------------------
+*/
+
+$wrongSubjectId =
+    $subjectId + 99999;
+
+check(
+    'Unassigned Subject Protection',
+    !$authorization->canManageSubject(
+        $classroomId,
+        $wrongSubjectId
+    )
+);
+
+/*
+|--------------------------------------------------------------------------
+| Find students
+|--------------------------------------------------------------------------
+*/
+
+$studentRecords =
+    $studentRepository->allOrdered();
+
+$assignedStudentId = null;
+$outsideStudentId = null;
+
+$assignedClassroomIds = [];
+
+foreach (
+    $teacherAssignments
+    as $assignment
+) {
+    if (
+        (int) (
+            $assignment->is_active
+            ?? 0
+        ) !== 1
+    ) {
+        continue;
+    }
+
+    $assignedClassroomIds[
+        (int) (
+            $assignment->classroom_id
+        )
+    ] = true;
+}
+
+foreach (
+    $studentRecords
+    as $student
+) {
+    $studentId = (int) (
+        $student['id'] ?? 0
+    );
+
+    $studentClassroomId = (int) (
+        $student['classroom_id'] ?? 0
+    );
+
+    if (
+        $studentId <= 0
+        || $studentClassroomId <= 0
+    ) {
+        continue;
+    }
+
+    if (
+        $assignedStudentId === null
+        && isset(
+            $assignedClassroomIds[
+                $studentClassroomId
+            ]
+        )
+    ) {
+        $assignedStudentId = $studentId;
+    }
+
+    if (
+        $outsideStudentId === null
+        && !isset(
+            $assignedClassroomIds[
+                $studentClassroomId
+            ]
+        )
+    ) {
+        $outsideStudentId = $studentId;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Assigned student
+|--------------------------------------------------------------------------
+*/
+
+if ($assignedStudentId !== null) {
+    check(
+        'Assigned Student Access',
+        $authorization->canManageStudent(
+            $assignedStudentId
+        )
+    );
+} else {
+    echo "Assigned Student Access: SKIPPED"
+        . " (no matching student found)"
+        . PHP_EOL;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Student outside teacher's classrooms
+|--------------------------------------------------------------------------
+*/
+
+if ($outsideStudentId !== null) {
+    check(
+        'Unassigned Student Protection',
+        !$authorization->canManageStudent(
+            $outsideStudentId
+        )
+    );
+} else {
+    echo "Unassigned Student Protection: SKIPPED"
+        . " (no outside student found)"
+        . PHP_EOL;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Invalid student
+|--------------------------------------------------------------------------
+*/
+
+check(
+    'Invalid Student Protection',
+    !$authorization->canManageStudent(
+        -1
+    )
+);
+
+/*
+|--------------------------------------------------------------------------
+| Non-teacher protection
+|--------------------------------------------------------------------------
+*/
+
+$studentSession = new TestSession([
+    'user_id' => $userId,
+    'role_id' => 3,
+]);
+
+$studentAuthorization =
+    new TeacherAuthorizationService(
+        $studentSession,
+        $teacherRepository,
+        $assignmentRepository,
+        $studentRepository
+    );
+
+check(
+    'Non-Teacher Classroom Protection',
+    !$studentAuthorization->canAccessClassroom(
+        $classroomId
+    )
+);
+
+check(
+    'Non-Teacher Subject Protection',
+    !$studentAuthorization->canManageSubject(
+        $classroomId,
+        $subjectId
+    )
+);
+
+check(
+    'Non-Teacher Student Protection',
+    !$studentAuthorization->canManageStudent(
+        $assignedStudentId ?? -1
+    )
+);
+
+/*
+|--------------------------------------------------------------------------
+| Teacher without linked profile
+|--------------------------------------------------------------------------
+*/
+
+$unlinkedTeacherSession = new TestSession([
+    'user_id' => 999999,
+    'role_id' => 2,
+]);
+
+$unlinkedTeacherAuthorization =
+    new TeacherAuthorizationService(
+        $unlinkedTeacherSession,
+        $teacherRepository,
+        $assignmentRepository,
+        $studentRepository
+    );
+
+check(
+    'Unlinked Teacher Profile Protection',
+    $unlinkedTeacherAuthorization->currentTeacher()
+        === null
+);
+
+check(
+    'Unlinked Teacher Classroom Protection',
+    !$unlinkedTeacherAuthorization->canAccessClassroom(
+        $classroomId
+    )
+);
+
+check(
+    'Unlinked Teacher Subject Protection',
+    !$unlinkedTeacherAuthorization->canManageSubject(
+        $classroomId,
+        $subjectId
+    )
+);
+
+/*
+|--------------------------------------------------------------------------
+| Administrator bypass
 |--------------------------------------------------------------------------
 */
 
@@ -388,12 +643,52 @@ $adminAuthorization =
         $studentRepository
     );
 
-echo $adminAuthorization->canManageSubject(
-    $classroomId,
-    $wrongSubjectId
-)
-    ? "Administrator Bypass: PASSED\n"
-    : "Administrator Bypass: FAILED\n";
+check(
+    'Administrator Role Detection',
+    $adminAuthorization->isAdmin()
+);
+
+check(
+    'Administrator Classroom Bypass',
+    $adminAuthorization->canAccessClassroom(
+        999999
+    )
+);
+
+check(
+    'Administrator Subject Bypass',
+    $adminAuthorization->canManageSubject(
+        999999,
+        999999
+    )
+);
+
+if ($assignedStudentId !== null) {
+    check(
+        'Administrator Student Bypass',
+        $adminAuthorization->canManageStudent(
+            $assignedStudentId
+        )
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Summary
+|--------------------------------------------------------------------------
+*/
 
 echo PHP_EOL;
-echo "TEACHER AUTHORIZATION TEST COMPLETE\n";
+echo "===========================\n";
+echo "TOTAL:  {$total}\n";
+echo "PASSED: {$passed}\n";
+echo "FAILED: {$failed}\n";
+echo "===========================\n";
+
+if ($failed > 0) {
+    echo "TEACHER AUTHORIZATION TEST FAILED\n";
+
+    exit(1);
+}
+
+echo "TEACHER AUTHORIZATION TEST PASSED\n";
