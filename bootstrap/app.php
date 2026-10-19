@@ -12,6 +12,7 @@ use SchoolERP\Security\Csrf;
 use SchoolERP\Session\SessionInterface;
 use SchoolERP\Session\SessionManager;
 use SchoolERP\View\ViewFactory;
+use SchoolERP\Providers\AppServiceProvider;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../app/Support/helpers.php';
@@ -46,6 +47,18 @@ $container->instance(
     Container::class,
     $container
 );
+
+/*
+|--------------------------------------------------------------------------
+| Register Application Services
+|--------------------------------------------------------------------------
+*/
+
+$container->register(
+    new AppServiceProvider($container)
+);
+
+$container->bootProviders();
 
 /*
 |--------------------------------------------------------------------------

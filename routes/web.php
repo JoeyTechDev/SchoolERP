@@ -16,6 +16,7 @@ use SchoolERP\Controllers\AttendanceController;
 use SchoolERP\Controllers\AttendanceHistoryController;
 use SchoolERP\Controllers\TeacherController;
 use SchoolERP\Controllers\TeacherPortalController;
+use SchoolERP\Controllers\ParentPortalController;
 use SchoolERP\Controllers\AuthController;
 use SchoolERP\Http\Request;
 use SchoolERP\Http\Response;
@@ -588,6 +589,28 @@ $router->get(
 $router->get(
     '/student/attendance',
     [StudentPortalController::class, 'attendance']
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Parent Portal Routes
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/parent',
+    [ParentPortalController::class, 'dashboard']
+);
+
+$router->get(
+    '/parent/dashboard',
+    [ParentPortalController::class, 'dashboard']
+);
+
+$router->get(
+    '/parent/students/{id}',
+    [ParentPortalController::class, 'student']
 );
 
 /*

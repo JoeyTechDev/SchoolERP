@@ -47,10 +47,30 @@ final class AuthController extends Controller
     public function showLogin(): Response
     {
         if ($this->authentication->check()) {
-            return $this->redirect(
-                '/SchoolERP/public/dashboard'
-            );
-        }
+    $roleId = $this->authentication->roleId();
+
+    return match ($roleId) {
+        1 => $this->redirect(
+            '/SchoolERP/public/dashboard'
+        ),
+
+        2 => $this->redirect(
+            '/SchoolERP/public/teacher/dashboard'
+        ),
+
+        3 => $this->redirect(
+            '/SchoolERP/public/student/dashboard'
+        ),
+
+        4 => $this->redirect(
+            '/SchoolERP/public/parent/dashboard'
+        ),
+
+        default => $this->redirect(
+            '/SchoolERP/public/auth/login'
+        ),
+    };
+}
 
         return $this->view(
             'auth.login',
@@ -115,6 +135,7 @@ public function login(
      * Role 1 = Administrator
      * Role 2 = Teacher
      * Role 3 = Student
+     * Role 4 = Parent
      */
     $roleId =
         $this->authentication->roleId();
@@ -130,6 +151,10 @@ public function login(
 
         3 => $this->redirect(
             '/SchoolERP/public/student/dashboard'
+        ),
+
+        4 => $this->redirect(
+            '/SchoolERP/public/parent/dashboard'
         ),
 
         default => $this->redirect(
