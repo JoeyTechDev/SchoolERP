@@ -227,35 +227,121 @@ $attendanceRate = (float) (
         </div>
     </div>
 
-    <!-- Academic period -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <h2 class="h5 fw-semibold mb-3">Academic Period</h2>
+    
+<!-- Academic period -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h5 fw-semibold mb-3">
+            Academic Period
+        </h2>
 
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <div class="small text-muted">Academic Session</div>
-                    <div class="fw-semibold">
-                        <?= $escape($sessionName) ?>
-                    </div>
+        <form
+            method="GET"
+            action="/SchoolERP/public/parent/students/<?= (int) ($student['id'] ?? 0) ?>"
+            class="row g-3 align-items-end mb-4"
+        >
+            <div class="col-12 col-md-5">
+                <label
+                    for="academic_session_id"
+                    class="form-label"
+                >
+                    Academic Session
+                </label>
+
+                <select
+                    name="academic_session_id"
+                    id="academic_session_id"
+                    class="form-select"
+                    required
+                >
+                    <option value="">
+                        Select academic session
+                    </option>
+
+                    <?php foreach ($sessions as $session): ?>
+                        <?php $optionSessionId = (int) ($session['id'] ?? 0); ?>
+
+                        <option
+                            value="<?= $optionSessionId ?>"
+                            <?= $optionSessionId === $sessionId ? 'selected' : '' ?>
+                        >
+                            <?= $escape($session['name'] ?? '') ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label
+                    for="term_id"
+                    class="form-label"
+                >
+                    Term
+                </label>
+
+                <select
+                    name="term_id"
+                    id="term_id"
+                    class="form-select"
+                    required
+                >
+                    <option value="">
+                        Select term
+                    </option>
+
+                    <?php foreach ($terms as $term): ?>
+                        <?php $optionTermId = (int) ($term['id'] ?? 0); ?>
+
+                        <option
+                            value="<?= $optionTermId ?>"
+                            <?= $optionTermId === $termId ? 'selected' : '' ?>
+                        >
+                            <?= $escape($term['name'] ?? '') ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <button
+                    type="submit"
+                    class="btn btn-primary w-100"
+                >
+                    View Records
+                </button>
+            </div>
+        </form>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <div class="small text-muted">
+                    Selected Academic Session
                 </div>
 
-                <div class="col-12 col-md-6">
-                    <div class="small text-muted">Term</div>
-                    <div class="fw-semibold">
-                        <?= $escape($termName) ?>
-                    </div>
+                <div class="fw-semibold">
+                    <?= $escape($sessionName) ?>
                 </div>
             </div>
 
-            <?php if ($sessionId <= 0 || $termId <= 0): ?>
-                <p class="text-muted mt-3 mb-0">
-                    Academic results and attendance will appear
-                    after an academic session and term are configured.
-                </p>
-            <?php endif; ?>
+            <div class="col-12 col-md-6">
+                <div class="small text-muted">
+                    Selected Term
+                </div>
+
+                <div class="fw-semibold">
+                    <?= $escape($termName) ?>
+                </div>
+            </div>
         </div>
+
+        <?php if ($sessionId <= 0 || $termId <= 0): ?>
+            <p class="text-muted mt-3 mb-0">
+                Academic results and attendance will appear
+                after an academic session and term are configured.
+            </p>
+        <?php endif; ?>
     </div>
+</div>
 
     <!-- Academic results -->
     <div class="card border-0 shadow-sm mb-4">
